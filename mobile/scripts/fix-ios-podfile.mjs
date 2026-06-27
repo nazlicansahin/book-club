@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Cap sync re-adds CapacitorFirebaseAuthentication (Lite) to Podfile.
- * Google sign-in requires the /Google subspec instead.
+ * Ensure Podfile uses base CapacitorFirebaseAuthentication pod + GoogleSignIn
+ * (subspec-only installs create an empty aggregate target on iOS).
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -12,23 +12,22 @@ const podfilePath = join(
   "../ios/App/Podfile"
 );
 
+const expectedAuthLine =
+  "pod 'CapacitorFirebaseAuthentication', :path => '../../node_modules/@capacitor-firebase/authentication'";
+
 let content = readFileSync(podfilePath, "utf8");
 
-// Remove Lite pod from capacitor_pods block
 content = content.replace(
-  /^\s*pod 'CapacitorFirebaseAuthentication', :path => '\.\.\/\.\.\/node_modules\/@capacitor-firebase\/authentication'\n/m,
+  /pod 'CapacitorFirebaseAuthentication[^']*',[^\n]+\n/g,
   ""
 );
 
-const googlePod =
-  "  pod 'CapacitorFirebaseAuthentication/Google', :path => '../../node_modules/@capacitor-firebase/authentication'";
-
-if (!content.includes("CapacitorFirebaseAuthentication/Google")) {
+if (!content.includes(expectedAuthLine)) {
   content = content.replace(
-    /target 'App' do\n  capacitor_pods\n/,
-    `target 'App' do\n  capacitor_pods\n${googlePod}\n`
+    /(pod 'CapacitorStatusBar'[^\n]+\n)/,
+    `$1  ${expectedAuthLine}\n`
   );
 }
 
 writeFileSync(podfilePath, content);
-console.log("Podfile patched for Google Sign-In");
+console.log("Podfile patched for CapacitorFirebaseAuthentication + GoogleSignIn");

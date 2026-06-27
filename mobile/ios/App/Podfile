@@ -3,32 +3,36 @@ require_relative '../../node_modules/@capacitor/ios/scripts/pods_helpers'
 platform :ios, '14.0'
 use_frameworks!
 
-# workaround to avoid Xcode caching of Pods that requires
-# Product -> Clean Build Folder after new Cordova plugins installed
-# Requires CocoaPods 1.6 or newer
 install! 'cocoapods', :disable_input_output_paths => true
 
 def capacitor_pods
   pod 'Capacitor', :path => '../../node_modules/@capacitor/ios'
   pod 'CapacitorCordova', :path => '../../node_modules/@capacitor/ios'
-  pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
+    pod 'CapacitorApp', :path => '../../node_modules/@capacitor/app'
   pod 'CapacitorSplashScreen', :path => '../../node_modules/@capacitor/splash-screen'
   pod 'CapacitorStatusBar', :path => '../../node_modules/@capacitor/status-bar'
+  pod 'CapacitorFirebaseAuthentication', :path => '../../node_modules/@capacitor-firebase/authentication'
 end
 
 target 'App' do
   capacitor_pods
-  # Google subspec required for native sign-in (do not use default Lite pod)
-  pod 'CapacitorFirebaseAuthentication/Google', :path => '../../node_modules/@capacitor-firebase/authentication'
 end
 
 post_install do |installer|
   assertDeploymentTarget(installer)
+  google_sign_in = installer.pods_project.targets.find { |t| t.name == 'GoogleSignIn' }
   installer.pods_project.targets.each do |target|
     target.build_configurations.each do |config|
       if target.respond_to?(:product_type) && target.product_type == 'com.apple.product-type.bundle'
         config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
       end
+      if target.name == 'CapacitorFirebaseAuthentication'
+        flags = config.build_settings['OTHER_SWIFT_FLAGS'] || '$(inherited)'
+        config.build_settings['OTHER_SWIFT_FLAGS'] = "#{flags} -DRGCFA_INCLUDE_GOOGLE"
+      end
+    end
+    if target.name == 'CapacitorFirebaseAuthentication' && google_sign_in
+      target.add_dependency(google_sign_in)
     end
   end
 end
