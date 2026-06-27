@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>QUEST LOG - My Clubs</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=Courier+Prime:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#cfe5ff",
+                    "tertiary-container": "#c59947",
+                    "on-background": "#dae1ff",
+                    "primary-container": "#41a6f6",
+                    "secondary": "#63de86",
+                    "on-error-container": "#ffdad6",
+                    "tertiary": "#f0bf69",
+                    "on-surface-variant": "#bfc7d3",
+                    "on-surface": "#dae1ff",
+                    "secondary-fixed-dim": "#63de86",
+                    "on-tertiary-container": "#4a3300",
+                    "secondary-fixed": "#80fba0",
+                    "error": "#ffb4ab",
+                    "surface-variant": "#2b344e",
+                    "surface-container-high": "#202943",
+                    "tertiary-fixed-dim": "#f0bf69",
+                    "on-secondary-fixed": "#00210b",
+                    "surface-tint": "#99cbff",
+                    "error-container": "#93000a",
+                    "surface-container-highest": "#2b344e",
+                    "tertiary-fixed": "#ffdea9",
+                    "primary-fixed-dim": "#99cbff",
+                    "outline": "#89919c",
+                    "on-secondary": "#003918",
+                    "surface-bright": "#2f3853",
+                    "on-primary-container": "#00395e",
+                    "primary": "#99cbff",
+                    "surface-dim": "#08122b",
+                    "inverse-primary": "#00629d",
+                    "inverse-on-surface": "#26304a",
+                    "on-primary-fixed": "#001d33",
+                    "on-tertiary-fixed": "#271900",
+                    "secondary-container": "#1fa655",
+                    "on-primary": "#003354",
+                    "on-error": "#690005",
+                    "on-tertiary": "#422c00",
+                    "on-tertiary-fixed-variant": "#5e4100",
+                    "on-secondary-fixed-variant": "#005225",
+                    "surface-container": "#151f38",
+                    "background": "#08122b",
+                    "surface-container-lowest": "#040d26",
+                    "outline-variant": "#3f4751",
+                    "inverse-surface": "#dae1ff",
+                    "surface": "#08122b",
+                    "surface-container-low": "#111b34",
+                    "on-secondary-container": "#003113",
+                    "on-primary-fixed-variant": "#004a78"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "margin": "16px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "unit": "4px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Space Mono"],
+                    "headline-lg": ["Space Mono"],
+                    "label-sm": ["Space Mono"],
+                    "body-lg": ["Courier Prime"],
+                    "label-lg": ["Space Mono"],
+                    "headline-lg-mobile": ["Space Mono"],
+                    "body-md": ["Courier Prime"]
+            },
+            "fontSize": {
+                    "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "1px", "fontWeight": "700"}],
+                    "label-sm": ["10px", {"lineHeight": "12px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #1a1c2c; /* Navy background as requested */
+            image-rendering: pixelated;
+        }
+        .pixel-border {
+            border: 4px solid #000000;
+        }
+        .pixel-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+        .pixel-shadow-heavy {
+            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+        }
+        .active-press:active {
+            transform: translate(4px, 4px);
+            box-shadow: none;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for retro feel */
+        ::-webkit-scrollbar {
+            width: 12px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #08122b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333c57;
+            border: 3px solid #08122b;
+        }
+    </style>
+</head>
+<body class="text-on-background font-body-md min-h-screen pb-24">
+<!-- TopAppBar -->
+<header class="bg-surface-container text-primary flex justify-between items-center w-full px-4 h-16 max-w-full fixed top-0 z-50 border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+<div class="text-headline-lg-mobile font-headline-lg-mobile text-tertiary-fixed-dim uppercase">
+            QUEST LOG
+        </div>
+<div class="flex gap-4">
+<span class="material-symbols-outlined hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-75 cursor-pointer" data-icon="local_fire_department">local_fire_department</span>
+<span class="material-symbols-outlined hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-75 cursor-pointer" data-icon="military_tech">military_tech</span>
+<span class="material-symbols-outlined hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-75 cursor-pointer" data-icon="timer">timer</span>
+</div>
+</header>
+<main class="pt-24 px-4 max-w-md mx-auto">
+<!-- Title Section -->
+<div class="mb-8">
+<h1 class="text-headline-lg font-headline-lg text-primary uppercase mb-2">MY CLUBS</h1>
+<div class="h-1 w-24 bg-secondary"></div>
+</div>
+<!-- Bento Grid of Club Cards -->
+<div class="grid grid-cols-1 gap-6 mb-12">
+<!-- Club Card 1: Save Slot Style -->
+<div class="pixel-border pixel-shadow bg-surface-variant p-md relative overflow-hidden group cursor-pointer active-press transition-all">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 bg-surface-container-high pixel-border flex items-center justify-center">
+<img class="w-12 h-12" data-alt="A 16-bit pixel art icon of a glowing leather-bound fantasy tome with a golden bookmark. The book is set against a dark navy background with small floating magical sparkles, using a vibrant color palette of emerald green and gold." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDq9HKFt4UqLd3f6rMYlR4g6svXvcJiWq19MiFBdthJZ7diLnGo_voNENN0ZkPWuOO7ymR9DhBVIN98IIqseSY_W4OFRwc6xWsBS5lUlykloKA4AIcHCA7avJ19MEBh3bk6dfKSibjOd_W5J69KSBinRNshvBDymbWfEzn18e-hIUgyJMe2UhJxiS3MtGhs2uck7Sn6la1B8GB1koDNjQpM4D6hcj0S56R1f_5X5Jd7eB5VkLmtbcR9wA"/>
+</div>
+<div class="flex-1">
+<div class="text-label-sm text-secondary uppercase tracking-widest mb-1">SLOT 01</div>
+<h3 class="text-headline-md font-headline-md text-on-surface">EPIC FANTASY</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-error text-[18px]" data-icon="local_fire_department" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="text-label-lg font-label-lg text-on-surface-variant uppercase">14 DAYS STREAK</span>
+</div>
+</div>
+</div>
+<!-- Progress Indicator -->
+<div class="mt-4 h-4 bg-background pixel-border overflow-hidden">
+<div class="h-full bg-secondary w-3/4" style="box-shadow: inset -4px 0px 0px rgba(0,0,0,0.2);"></div>
+</div>
+</div>
+<!-- Club Card 2 -->
+<div class="pixel-border pixel-shadow bg-surface-variant p-md relative overflow-hidden group cursor-pointer active-press transition-all">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 bg-surface-container-high pixel-border flex items-center justify-center">
+<img class="w-12 h-12" data-alt="A retro pixel art illustration of a futuristic neon-lit city skyline at night, framed within a small square tile. The artwork uses intense purples, magentas, and deep cyans to create a cyberpunk atmosphere, evoking 16-bit era home console graphics." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBurGPhWrrBZgwsh57c2K_RZcqeOuw3wrYFGro0xYM4f-1S3xS7-gxTuaZ2rK70MSwhNieEUl3DRUJAwY6uU6daYqt1cbTUyk7OyYWQF80qU-slCsefHIQYZd1DLlrS1NUjiyitcv1g1KDZLhgFLiwSi5JVTMpPJFcIeyDJ1pQfxkRJ17O4i8bF9z8B4K2xiPqXmXgt_laMSQ2IbCDTdrl5LJhhK7YtY-JkIWG5KtFz8eLet-BUzGWGEg"/>
+</div>
+<div class="flex-1">
+<div class="text-label-sm text-secondary uppercase tracking-widest mb-1">SLOT 02</div>
+<h3 class="text-headline-md font-headline-md text-on-surface">CYBER-READERS</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-error text-[18px]" data-icon="local_fire_department" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="text-label-lg font-label-lg text-on-surface-variant uppercase">08 DAYS STREAK</span>
+</div>
+</div>
+</div>
+<div class="mt-4 h-4 bg-background pixel-border overflow-hidden">
+<div class="h-full bg-secondary w-1/4" style="box-shadow: inset -4px 0px 0px rgba(0,0,0,0.2);"></div>
+</div>
+</div>
+<!-- Club Card 3 -->
+<div class="pixel-border pixel-shadow bg-surface-variant p-md relative overflow-hidden group cursor-pointer active-press transition-all opacity-80 hover:opacity-100">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 bg-surface-container-high pixel-border flex items-center justify-center">
+<img class="w-12 h-12" data-alt="A pixelated high-contrast icon of a classic magnifying glass inspecting an old parchment scroll. The style is reminiscent of 90s mystery RPGs, with a palette of beige, dark brown, and sharp white highlights on a deep slate background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCVczvdjAhumNrfu_hNUw7dCS7lowGCQEilJG7Daf105BFvU77yUOiAhFQuV2PZrMotWrcL55JaxMZN6C587qXToBADt1VnEh8mfeDWg-FIECihnM7-IetUTB-EgEZlU7-paiiO_rxVamPMkojzwtXHIOhCPvwbQQHePEStbmBBgfAtOQkH25AVB4a9JHMDg-TkKuMC-vLPZv6DuKIigexch8cdOCdJlYk0MvpIcJyoLhZnSXhxeBj9eg"/>
+</div>
+<div class="flex-1">
+<div class="text-label-sm text-secondary uppercase tracking-widest mb-1">SLOT 03</div>
+<h3 class="text-headline-md font-headline-md text-on-surface">MYSTERY MANIA</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="material-symbols-outlined text-error text-[18px]" data-icon="local_fire_department" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="text-label-lg font-label-lg text-on-surface-variant uppercase">22 DAYS STREAK</span>
+</div>
+</div>
+</div>
+<div class="mt-4 h-4 bg-background pixel-border overflow-hidden">
+<div class="h-full bg-secondary w-full" style="box-shadow: inset -4px 0px 0px rgba(0,0,0,0.2);"></div>
+</div>
+</div>
+</div>
+<!-- Large Gold New Club Button -->
+<button class="w-full bg-tertiary text-on-tertiary-container pixel-border pixel-shadow-heavy py-4 flex items-center justify-center gap-2 active-press transition-all mb-8">
+<span class="material-symbols-outlined font-bold" data-icon="add_circle">add_circle</span>
+<span class="text-headline-md font-headline-md uppercase">+ NEW CLUB</span>
+</button>
+<!-- Stats Briefing Section -->
+<div class="bg-surface-container-low pixel-border p-md mb-4">
+<div class="flex justify-between items-center mb-4">
+<span class="text-label-lg font-label-lg text-primary uppercase">WEEKLY REP</span>
+<span class="text-label-sm text-on-surface-variant">+420 XP</span>
+</div>
+<div class="grid grid-cols-7 gap-2">
+<div class="h-8 bg-secondary pixel-border"></div>
+<div class="h-8 bg-secondary pixel-border"></div>
+<div class="h-8 bg-secondary pixel-border"></div>
+<div class="h-8 bg-secondary pixel-border"></div>
+<div class="h-8 bg-surface-container-highest pixel-border border-dashed"></div>
+<div class="h-8 bg-surface-container-highest pixel-border border-dashed"></div>
+<div class="h-8 bg-surface-container-highest pixel-border border-dashed"></div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface-container-highest text-secondary border-t-4 border-black shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)]">
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container border-2 border-black p-2 scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="swords">swords</span>
+<span class="text-label-lg font-label-lg uppercase">QUESTS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="leaderboard">leaderboard</span>
+<span class="text-label-lg font-label-lg uppercase">STATS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-label-lg font-label-lg uppercase">CONFIG</span>
+</a>
+</nav>
+<script>
+        // Simple micro-interaction for cards
+        document.querySelectorAll('.active-press').forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'translate(4px, 4px)';
+                card.style.boxShadow = 'none';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = 'translate(0px, 0px)';
+                card.style.boxShadow = card.classList.contains('pixel-shadow-heavy') ? '8px 8px 0px 0px rgba(0,0,0,1)' : '4px 4px 0px 0px rgba(0,0,0,1)';
+            });
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'translate(0px, 0px)';
+                card.style.boxShadow = card.classList.contains('pixel-shadow-heavy') ? '8px 8px 0px 0px rgba(0,0,0,1)' : '4px 4px 0px 0px rgba(0,0,0,1)';
+            });
+        });
+    </script>
+</body></html>

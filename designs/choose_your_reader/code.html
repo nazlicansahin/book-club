@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>QUEST LOG - Choose Your Reader</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&amp;family=Courier+Prime:wght@400;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#cfe5ff",
+                    "tertiary-container": "#c59947",
+                    "on-background": "#dae1ff",
+                    "primary-container": "#41a6f6",
+                    "secondary": "#63de86",
+                    "on-error-container": "#ffdad6",
+                    "tertiary": "#f0bf69",
+                    "on-surface-variant": "#bfc7d3",
+                    "on-surface": "#dae1ff",
+                    "secondary-fixed-dim": "#63de86",
+                    "on-tertiary-container": "#4a3300",
+                    "secondary-fixed": "#80fba0",
+                    "error": "#ffb4ab",
+                    "surface-variant": "#2b344e",
+                    "surface-container-high": "#202943",
+                    "tertiary-fixed-dim": "#f0bf69",
+                    "on-secondary-fixed": "#00210b",
+                    "surface-tint": "#99cbff",
+                    "error-container": "#93000a",
+                    "surface-container-highest": "#2b344e",
+                    "tertiary-fixed": "#ffdea9",
+                    "primary-fixed-dim": "#99cbff",
+                    "outline": "#89919c",
+                    "on-secondary": "#003918",
+                    "surface-bright": "#2f3853",
+                    "on-primary-container": "#00395e",
+                    "primary": "#99cbff",
+                    "surface-dim": "#08122b",
+                    "inverse-primary": "#00629d",
+                    "inverse-on-surface": "#26304a",
+                    "on-primary-fixed": "#001d33",
+                    "on-tertiary-fixed": "#271900",
+                    "secondary-container": "#1fa655",
+                    "on-primary": "#003354",
+                    "on-error": "#690005",
+                    "on-tertiary": "#422c00",
+                    "on-tertiary-fixed-variant": "#5e4100",
+                    "on-secondary-fixed-variant": "#005225",
+                    "surface-container": "#151f38",
+                    "background": "#08122b",
+                    "surface-container-lowest": "#040d26",
+                    "outline-variant": "#3f4751",
+                    "inverse-surface": "#dae1ff",
+                    "surface": "#08122b",
+                    "surface-container-low": "#111b34",
+                    "on-secondary-container": "#003113",
+                    "on-primary-fixed-variant": "#004a78"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0px",
+                    "lg": "0px",
+                    "xl": "0px",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "lg": "24px",
+                    "margin": "16px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "unit": "4px",
+                    "md": "16px",
+                    "xl": "32px",
+                    "gutter": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Space Mono"],
+                    "headline-lg": ["Space Mono"],
+                    "label-sm": ["Space Mono"],
+                    "body-lg": ["Courier Prime"],
+                    "label-lg": ["Space Mono"],
+                    "headline-lg-mobile": ["Space Mono"],
+                    "body-md": ["Courier Prime"]
+            },
+            "fontSize": {
+                    "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "700"}],
+                    "headline-lg": ["24px", {"lineHeight": "32px", "letterSpacing": "1px", "fontWeight": "700"}],
+                    "label-sm": ["10px", {"lineHeight": "12px", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "label-lg": ["12px", {"lineHeight": "16px", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["20px", {"lineHeight": "28px", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            background-color: #08122b;
+            image-rendering: pixelated;
+            overflow-x: hidden;
+        }
+
+        .pixel-border {
+            box-shadow: 
+                0 -4px 0 0 #000,
+                0 4px 0 0 #000,
+                -4px 0 0 0 #000,
+                4px 0 0 0 #000;
+        }
+
+        .pixel-card-shadow {
+            box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+        }
+
+        .pixel-card-shadow-active {
+            box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+        }
+
+        .gold-border {
+            border: 4px solid #f0bf69;
+            outline: 4px solid #000;
+        }
+
+        .star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background-color: #fff;
+            animation: twinkle 2s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .active-selection {
+            transform: translate(-4px, -4px);
+            background-color: #1a1c2c; /* Panel color from guidelines */
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center pb-24">
+<!-- Starry Background Layer -->
+<div class="fixed inset-0 pointer-events-none -z-10" id="star-field"></div>
+<!-- Top App Bar (From Shared Components) -->
+<header class="bg-surface-container dark:bg-surface-container text-primary dark:text-primary docked full-width top-0 border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center w-full px-4 h-16 max-w-full z-50">
+<div class="text-headline-lg-mobile font-headline-lg-mobile text-tertiary-fixed-dim uppercase">QUEST LOG</div>
+<div class="flex gap-4">
+<button class="material-symbols-outlined hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-75">local_fire_department</button>
+<button class="material-symbols-outlined hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-75">military_tech</button>
+<button class="material-symbols-outlined hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-75">timer</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="flex-grow flex flex-col items-center w-full max-w-md px-margin pt-xl">
+<!-- Header Section -->
+<div class="text-center mb-xl">
+<h1 class="text-headline-lg font-headline-lg text-primary uppercase mb-xs tracking-wider">CHOOSE YOUR READER</h1>
+<p class="text-body-md font-body-md text-on-surface-variant italic">The chronicles await your presence...</p>
+</div>
+<!-- 2x2 Bento Grid of Characters -->
+<div class="grid grid-cols-2 gap-lg w-full mb-xl" id="character-grid">
+<!-- Bookworm -->
+<div class="character-card bg-surface-container-high border-4 border-black p-xs cursor-pointer pixel-card-shadow transition-all duration-75 hover:translate-x-1 hover:translate-y-1 hover:shadow-none group" data-character="bookworm">
+<div class="bg-surface-dim p-sm flex items-center justify-center relative overflow-hidden h-40">
+<img class="w-24 h-24 object-contain group-hover:scale-110 transition-transform duration-150" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBBCAeW0kOSDGFGQtrMiKW3gU1wQ1HqkerSIDzhh1gJSiUVQpCjjj3-mItjMqbiIV7OPSEFaqaoU0z0SJ_UkH5w-0TkxELguq1nLIVf9bg5wLr6lEPlUz641kO_lHG1eZIkZkYdOwvA1rVbBYDCmkwd11VrzW1PLCc-3xgRIsF2A0Q-6zL6nEZgQKuX-via4TbhbEunISsDSL5nPyaZZZ0rdmeqbfc29GJYUTxrqFoGHVHRzn9csWApZg"/>
+<div class="absolute bottom-1 right-1 opacity-20 text-on-surface-variant material-symbols-outlined" style="font-size: 40px;">menu_book</div>
+</div>
+<div class="p-sm text-center bg-black/20 mt-xs">
+<span class="text-label-lg font-label-lg text-on-surface uppercase block">Bookworm</span>
+<span class="text-label-sm font-label-sm text-secondary uppercase block mt-unit">LVL 01 Scholar</span>
+</div>
+</div>
+<!-- Ninja -->
+<div class="character-card bg-surface-container-high border-4 border-black p-xs cursor-pointer pixel-card-shadow transition-all duration-75 hover:translate-x-1 hover:translate-y-1 hover:shadow-none group" data-character="ninja">
+<div class="bg-surface-dim p-sm flex items-center justify-center relative overflow-hidden h-40">
+<img class="w-24 h-24 object-contain group-hover:scale-110 transition-transform duration-150" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA2Imy_94FQ3XxKbhnym5wq2nBxiN6IxDgXS5r2IRjcI2uktcxlbwrNBA6IQa5yLaudOMihHurz6fqmHtSia1MgagI1pDDwx-gzBcl-1BB0_43wTE2-ctgeHqtepk5ThadLbV63xAbQgFmqL5yk0ahRsd_sXaEiR4ov7e-qamLaNSP7X4-BcYPiI03f9sGAIkJmj5CXcFnrTGGR48OWOoOtSsO5UixtoGHmwjsGLk0k-_T9pJad44O4BA"/>
+<div class="absolute bottom-1 right-1 opacity-20 text-on-surface-variant material-symbols-outlined" style="font-size: 40px;">visibility_off</div>
+</div>
+<div class="p-sm text-center bg-black/20 mt-xs">
+<span class="text-label-lg font-label-lg text-on-surface uppercase block">Ninja</span>
+<span class="text-label-sm font-label-sm text-secondary uppercase block mt-unit">LVL 01 Scout</span>
+</div>
+</div>
+<!-- Wizard -->
+<div class="character-card bg-surface-container-high border-4 border-black p-xs cursor-pointer gold-border pixel-card-shadow-active active-selection group" data-character="wizard">
+<div class="bg-surface-dim p-sm flex items-center justify-center relative overflow-hidden h-40">
+<img class="w-24 h-24 object-contain group-hover:scale-110 transition-transform duration-150" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCxaj0OLiK11l9ThDovyWDStR8DBcEQRvnJPkDTk5JMrQRhQqf9XlPECN8nw3HgzwOkirgSgcgJ8rc9-XhUCF8IBL_WcsfDtOWjqqcXV5u9Nxl0wx02vuROCbJJ0FLzYw2Aa2fSolB7Es3sOxQM0T5deiU4NJTDTkQAXostaNu7eUUdFX7hTH7_M0HnvpQy-Ot44pPcUIA65-2xM_pYfR5jsuzH7sFFPjkDnl-Hi52gaZmYFj6g8ixdLg"/>
+<div class="absolute bottom-1 right-1 opacity-20 text-on-surface-variant material-symbols-outlined" style="font-size: 40px;">magic_button</div>
+<!-- Selection Indicator Arrow -->
+<div class="absolute top-2 left-2 w-4 h-4 bg-tertiary-container animate-pulse"></div>
+</div>
+<div class="p-sm text-center bg-tertiary-container mt-xs">
+<span class="text-label-lg font-label-lg text-on-tertiary-container uppercase block">Wizard</span>
+<span class="text-label-sm font-label-sm text-on-tertiary-fixed-variant uppercase block mt-unit">LVL 01 Mage</span>
+</div>
+</div>
+<!-- Cat -->
+<div class="character-card bg-surface-container-high border-4 border-black p-xs cursor-pointer pixel-card-shadow transition-all duration-75 hover:translate-x-1 hover:translate-y-1 hover:shadow-none group" data-character="cat">
+<div class="bg-surface-dim p-sm flex items-center justify-center relative overflow-hidden h-40">
+<img class="w-24 h-24 object-contain group-hover:scale-110 transition-transform duration-150" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB43FPt-zY9f9215LFWH2hUlt2nMlr--zwM2GgAj-ILpNdV11XiiPGsQsgHLwzywjmS5eUoY45SCPCJp--aJRCrOLwXrdXD-AlvblGnDGUQCRgGtED5dCLzPOkEi90KICBD1Z1TCX17ptkabHwb28RPbsA30MtPXUF7q0smR0g84qCui_pzFcKpyM7F6YFE7WlOuxQ15m5do4ZhtlCvbJtcAslLLScjUY7EVWK9Bd7kojjDs_VRH2MmCw"/>
+<div class="absolute bottom-1 right-1 opacity-20 text-on-surface-variant material-symbols-outlined" style="font-size: 40px;">pets</div>
+</div>
+<div class="p-sm text-center bg-black/20 mt-xs">
+<span class="text-label-lg font-label-lg text-on-surface uppercase block">The Cat</span>
+<span class="text-label-sm font-label-sm text-secondary uppercase block mt-unit">LVL 01 Familiar</span>
+</div>
+</div>
+</div>
+<!-- Confirm Button Section -->
+<div class="w-full mt-gutter px-gutter">
+<button class="w-full bg-tertiary text-on-tertiary py-md px-lg border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all duration-75 uppercase text-headline-md font-headline-md">
+                CONFIRM SELECTION
+            </button>
+<div class="mt-md text-center">
+<span class="text-label-sm font-label-sm text-outline uppercase tracking-widest flex items-center justify-center gap-sm">
+<span class="w-2 h-2 bg-outline rotate-45"></span>
+                    Press Start to Begin
+                    <span class="w-2 h-2 bg-outline rotate-45"></span>
+</span>
+</div>
+</div>
+</main>
+<!-- Bottom Nav Bar (From Shared Components) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface-container-highest dark:bg-surface-container-highest border-t-4 border-black shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)]">
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant transition-all duration-75" href="#">
+<span class="material-symbols-outlined">swords</span>
+<span class="text-label-lg font-label-lg uppercase">QUESTS</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container border-2 border-black p-2 scale-95" href="#">
+<span class="material-symbols-outlined">leaderboard</span>
+<span class="text-label-lg font-label-lg uppercase">STATS</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-surface-variant p-2 hover:bg-surface-variant transition-all duration-75" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-label-lg font-label-lg uppercase">CONFIG</span>
+</a>
+</nav>
+<script>
+        // Star background generation
+        const starField = document.getElementById('star-field');
+        const starCount = 60;
+
+        for (let i = 0; i < starCount; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animationDelay = `${Math.random() * 2}s`;
+            starField.appendChild(star);
+        }
+
+        // Card Selection Logic
+        const cards = document.querySelectorAll('.character-card');
+        cards.forEach(card => {
+            card.addEventListener('click', () => {
+                // Remove active classes from all
+                cards.forEach(c => {
+                    c.classList.remove('gold-border', 'pixel-card-shadow-active', 'active-selection');
+                    c.classList.add('pixel-card-shadow');
+                    
+                    // Reset internal label color
+                    const labelDiv = c.querySelector('.p-sm:last-child');
+                    if (labelDiv) {
+                        labelDiv.classList.remove('bg-tertiary-container');
+                        labelDiv.classList.add('bg-black/20');
+                        const spans = labelDiv.querySelectorAll('span');
+                        spans[0].className = "text-label-lg font-label-lg text-on-surface uppercase block";
+                        spans[1].className = "text-label-sm font-label-sm text-secondary uppercase block mt-unit";
+                    }
+                    
+                    // Remove internal indicator
+                    const existingIndicator = c.querySelector('.animate-pulse');
+                    if (existingIndicator) existingIndicator.remove();
+                });
+
+                // Add active classes to selected
+                card.classList.add('gold-border', 'pixel-card-shadow-active', 'active-selection');
+                card.classList.remove('pixel-card-shadow');
+
+                // Update label colors for selected
+                const labelDiv = card.querySelector('.p-sm:last-child');
+                if (labelDiv) {
+                    labelDiv.classList.remove('bg-black/20');
+                    labelDiv.classList.add('bg-tertiary-container');
+                    const spans = labelDiv.querySelectorAll('span');
+                    spans[0].className = "text-label-lg font-label-lg text-on-tertiary-container uppercase block";
+                    spans[1].className = "text-label-sm font-label-sm text-on-tertiary-fixed-variant uppercase block mt-unit";
+                }
+
+                // Add indicator
+                const imgContainer = card.querySelector('.bg-surface-dim');
+                const indicator = document.createElement('div');
+                indicator.className = 'absolute top-2 left-2 w-4 h-4 bg-tertiary-container animate-pulse';
+                imgContainer.appendChild(indicator);
+            });
+        });
+    </script>
+</body></html>
