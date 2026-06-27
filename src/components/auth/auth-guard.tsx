@@ -11,10 +11,10 @@ export function AuthGuard({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (loading) return;
     if (!configured) {
-      router.replace("/login?error=firebase-not-configured");
+      router.replace("/?error=firebase-not-configured");
       return;
     }
-    if (!user) router.replace("/login");
+    if (!user) router.replace("/?start=1");
   }, [user, loading, configured, router]);
 
   if (loading) {

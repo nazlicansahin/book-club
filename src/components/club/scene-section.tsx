@@ -14,6 +14,14 @@ const LABEL_STYLES = {
   prison: "bg-error-container text-on-error-container",
 } as const;
 
+function MemberLabel({ name }: { name: string }) {
+  return (
+    <span className="mt-1 text-[10px] font-bold font-[family-name:var(--font-space-mono)] uppercase bg-black/70 text-white px-2 py-0.5 pixel-border text-center max-w-[88px] truncate">
+      {name}
+    </span>
+  );
+}
+
 type SceneSectionProps = {
   area: keyof typeof SCENE_IMAGES;
   label: string;
@@ -41,11 +49,11 @@ export function SceneSection({ area, label, members }: SceneSectionProps) {
       </div>
 
       {area === "prison" ? (
-        <div className="absolute inset-0 flex items-center justify-center z-20 pt-8">
+        <div className="absolute inset-0 flex items-center justify-center gap-8 z-20 pt-8">
           {members.map((member) => (
             <div key={member.id} className="relative flex flex-col items-center">
               {member.punishment && (
-                <div className="character-bubble text-[10px] font-bold font-[family-name:var(--font-space-mono)] mb-4 max-w-[200px] text-center">
+                <div className="character-bubble text-[10px] font-bold font-[family-name:var(--font-space-mono)] mb-2 max-w-[160px] text-center">
                   {member.punishment}
                 </div>
               )}
@@ -57,6 +65,7 @@ export function SceneSection({ area, label, members }: SceneSectionProps) {
                   <div className="w-1 bg-black/40 h-full" />
                 </div>
               </div>
+              <MemberLabel name={member.name} />
             </div>
           ))}
           {members.length === 0 && (
@@ -68,21 +77,17 @@ export function SceneSection({ area, label, members }: SceneSectionProps) {
       ) : (
         <div
           className={`absolute bottom-4 left-0 w-full flex items-end px-4 z-20 ${
-            area === "park" ? "justify-center gap-12" : "justify-around"
+            area === "park" ? "justify-center gap-8" : "justify-around"
           }`}
         >
           {members.map((member, i) => (
-            <div key={member.id} className="flex flex-col items-center" style={{ transform: i === 1 && area === "pool" ? "translateY(8px)" : undefined }}>
-              <CharacterSprite
-                characterId={member.characterId}
-                area={area}
-                delay={i * 0.2}
-              />
-              {area === "pool" && i === 0 && (
-                <div className="text-[10px] font-bold font-[family-name:var(--font-space-mono)] bg-black text-white px-1">
-                  LV. 12
-                </div>
-              )}
+            <div
+              key={member.id}
+              className="flex flex-col items-center"
+              style={{ transform: i === 1 && area === "pool" ? "translateY(8px)" : undefined }}
+            >
+              <CharacterSprite characterId={member.characterId} area={area} delay={i * 0.2} />
+              <MemberLabel name={member.name} />
             </div>
           ))}
           {members.length === 0 && (

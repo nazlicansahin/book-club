@@ -4,16 +4,30 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppHeader, BottomNav } from "@/components/layout/app-chrome";
+import { useAuth } from "@/components/auth/auth-provider";
+import { createClub } from "@/lib/club-service";
 
 export default function NewClubPage() {
   const router = useRouter();
+  const { user } = useAuth();
   const [name, setName] = useState("");
   const [book, setBook] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function create(e: React.FormEvent) {
+  async function create(e: React.FormEvent) {
     e.preventDefault();
-    // Stub: redirect to demo club until backend exists
-    router.push("/clubs/epic-fantasy");
+    if (!user) return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const club = await createClub(user, name, book);
+      router.push(`/clubs/${club.id}?created=1`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create club");
+      setSaving(false);
+    }
   }
 
   return (
@@ -64,11 +78,17 @@ export default function NewClubPage() {
               ))}
             </div>
           </div>
+
+          {error && (
+            <p className="text-xs font-bold font-[family-name:var(--font-space-mono)] text-error">{error}</p>
+          )}
+
           <button
             type="submit"
-            className="w-full bg-tertiary text-on-tertiary py-4 pixel-border pixel-shadow uppercase text-lg font-bold font-[family-name:var(--font-space-mono)] active-press"
+            disabled={saving}
+            className="w-full bg-tertiary text-on-tertiary py-4 pixel-border pixel-shadow uppercase text-lg font-bold font-[family-name:var(--font-space-mono)] active-press disabled:opacity-60"
           >
-            CREATE CLUB
+            {saving ? "CREATING..." : "CREATE CLUB"}
           </button>
         </form>
 

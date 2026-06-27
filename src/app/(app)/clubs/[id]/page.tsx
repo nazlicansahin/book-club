@@ -3,45 +3,96 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, usePathname } from "next/navigation";
 import { BottomNav } from "@/components/layout/app-chrome";
 import { SceneSection } from "@/components/club/scene-section";
 import { CountdownTimer } from "@/components/club/streak-fire";
-import { getClub, type ClubMember } from "@/lib/clubs";
-import { getStoredCharacter, hasCheckedInToday } from "@/lib/player-store";
+import { useAuth } from "@/components/auth/auth-provider";
+import { getClubWithMembers } from "@/lib/club-service";
+import type { Club, ClubMember } from "@/lib/clubs";
+import {
+  canSubmitReading,
+  getClubPlayerState,
+  getStoredCharacter,
+  needsPunishmentVideo,
+} from "@/lib/player-store";
 import type { CharacterId } from "@/lib/characters";
 
-function applyPlayerState(members: ClubMember[], playerChar: CharacterId | null, checkedIn: boolean): ClubMember[] {
-  if (!playerChar) return members;
+function applyPlayerState(
+  members: ClubMember[],
+  currentUid: string | undefined,
+  playerChar: CharacterId | null,
+  playerArea: ReturnType<typeof getClubPlayerState>["area"]
+): ClubMember[] {
+  if (!currentUid || !playerChar) return members;
 
   return members.map((m) => {
-    if (m.name !== "You") return m;
-    if (checkedIn) return { ...m, area: "pool" as const, checkedInToday: true, characterId: playerChar };
-    if (m.area === "prison") return { ...m, characterId: playerChar };
-    return { ...m, area: "park" as const, checkedInToday: false, characterId: playerChar };
+    if (m.uid !== currentUid) return m;
+    return {
+      ...m,
+      characterId: playerChar,
+      area: playerArea,
+      checkedInToday: playerArea === "pool",
+      isCurrentUser: true,
+    };
   });
 }
 
 export default function ClubMainPage() {
   const params = useParams<{ id: string }>();
-  const club = getClub(params.id);
+  const pathname = usePathname();
+  const { user } = useAuth();
+  const [club, setClub] = useState<Club | null>(null);
+  const [loading, setLoading] = useState(true);
   const [playerChar, setPlayerChar] = useState<CharacterId | null>(null);
-  const [checkedIn, setCheckedIn] = useState(false);
+  const [playerArea, setPlayerArea] = useState<ReturnType<typeof getClubPlayerState>["area"]>("park");
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!params.id || !user) return;
+    setLoading(true);
+    getClubWithMembers(params.id, user.uid)
+      .then(setClub)
+      .finally(() => setLoading(false));
+  }, [params.id, user, pathname]);
 
   useEffect(() => {
     setPlayerChar(getStoredCharacter());
-    if (params.id) setCheckedIn(hasCheckedInToday(params.id));
-  }, [params.id]);
+    if (params.id) {
+      setPlayerArea(getClubPlayerState(params.id, "park").area);
+    }
+  }, [params.id, pathname]);
 
   const members = useMemo(() => {
     if (!club) return { pool: [], park: [], prison: [] };
-    const updated = applyPlayerState(club.members, playerChar, checkedIn);
+    const updated = applyPlayerState(club.members, user?.uid, playerChar, playerArea);
     return {
       pool: updated.filter((m) => m.area === "pool"),
       park: updated.filter((m) => m.area === "park"),
       prison: updated.filter((m) => m.area === "prison"),
     };
-  }, [club, playerChar, checkedIn]);
+  }, [club, user?.uid, playerChar, playerArea]);
+
+  const showPunishment = params.id ? needsPunishmentVideo(params.id) : false;
+  const showReading = params.id ? canSubmitReading(params.id) : false;
+  const isOwner = user?.uid === club?.ownerId;
+
+  async function copyInviteCode() {
+    if (!club?.inviteCode) return;
+    await navigator.clipboard.writeText(club.inviteCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-sm font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase animate-pulse">
+          Loading club...
+        </p>
+      </div>
+    );
+  }
 
   if (!club) {
     return (
@@ -57,20 +108,20 @@ export default function ClubMainPage() {
   return (
     <>
       <header className="bg-surface-container border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center w-full px-4 h-16 fixed top-0 z-50">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <Image
             src="/assets/icons/fire-medium.png"
             alt="Quest Log"
             width={40}
             height={40}
-            className="w-10 h-10 pixel-border bg-background pixel-image object-contain"
+            className="w-10 h-10 pixel-border bg-background pixel-image object-contain shrink-0"
             unoptimized
           />
-          <span className="text-xl font-bold font-[family-name:var(--font-space-mono)] text-tertiary-fixed-dim uppercase tracking-tighter">
-            QUEST LOG
+          <span className="text-xl font-bold font-[family-name:var(--font-space-mono)] text-tertiary-fixed-dim uppercase tracking-tighter truncate">
+            {club.name}
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 shrink-0">
           <div className="flex flex-col items-end">
             <span className="text-xs font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase">
               DAY {club.currentStreak}
@@ -84,12 +135,59 @@ export default function ClubMainPage() {
       </header>
 
       <main className="mt-20 flex-grow px-4 flex flex-col gap-6 pb-32 max-w-md mx-auto w-full">
+        {isOwner && (
+          <div className="pixel-border bg-surface-container-high p-4 pixel-shadow">
+            <div className="flex justify-between items-start gap-2">
+              <div>
+                <span className="text-[10px] font-bold font-[family-name:var(--font-space-mono)] text-secondary uppercase">
+                  Invite Code
+                </span>
+                <p className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary tracking-widest mt-1">
+                  {club.inviteCode}
+                </p>
+                <p className="text-xs text-on-surface-variant font-[family-name:var(--font-courier-prime)] mt-1">
+                  Share this code so friends can join. Only you are in the club until someone uses it.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={copyInviteCode}
+                className="pixel-border bg-tertiary text-on-tertiary px-3 py-2 text-[10px] font-bold font-[family-name:var(--font-space-mono)] uppercase shrink-0"
+              >
+                {copied ? "COPIED!" : "COPY"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {club.members.length === 1 && (
+          <p className="text-xs text-on-surface-variant font-[family-name:var(--font-courier-prime)] text-center -mt-2">
+            Waiting for readers to join with your invite code...
+          </p>
+        )}
+
         <SceneSection area="pool" label="POOL" members={members.pool} />
         <SceneSection area="park" label="PARK" members={members.park} />
         <SceneSection area="prison" label="PRISON" members={members.prison} />
       </main>
 
-      {!checkedIn && (
+      {showPunishment && (
+        <div className="fixed bottom-24 right-4 z-50">
+          <Link
+            href={`/clubs/${club.id}/punishment`}
+            className="flex items-center gap-2 bg-error-container text-on-error-container p-4 pixel-border pixel-shadow-lg transition-all duration-75 active:translate-x-1 active:translate-y-1 active:shadow-none"
+          >
+            <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+              videocam
+            </span>
+            <span className="text-sm font-bold font-[family-name:var(--font-space-mono)] uppercase">
+              Send Punishment
+            </span>
+          </Link>
+        </div>
+      )}
+
+      {showReading && (
         <div className="fixed bottom-24 right-4 z-50">
           <Link
             href={`/clubs/${club.id}/check-in`}
