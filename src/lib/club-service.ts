@@ -69,6 +69,14 @@ export async function sendToPrison(clubId: string, userId?: string) {
   });
 }
 
+export async function leaveClub(clubId: string) {
+  invalidateClubsCache();
+  await authFetch(`/api/clubs/${clubId}/member-state`, {
+    method: "PATCH",
+    body: JSON.stringify({ action: "leave" }),
+  });
+}
+
 export async function submitPunishmentPhoto(clubId: string, photo: File) {
   const formData = new FormData();
   formData.append("photo", photo);

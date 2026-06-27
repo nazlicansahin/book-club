@@ -1,13 +1,19 @@
 import { put } from "@vercel/blob";
+import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-server";
-import { getMemberState, isClubMember, markPunishmentSubmitted } from "@/lib/db/clubs";
 import { getClubLocalDate, normalizeTimezone } from "@/lib/club-day";
+import { isClubMember, markPunishmentSubmitted } from "@/lib/db/clubs";
 import { getDb } from "@/db";
-import { clubs } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { clubMembers, clubs } from "@/db/schema";
 
 type Params = { params: Promise<{ id: string }> };
+
+function normalizeDate(value: string | Date | null | undefined): string | null {
+  if (!value) return null;
+  if (typeof value === "string") return value.slice(0, 10);
+  return value.toISOString().slice(0, 10);
+}
 
 export async function POST(request: Request, { params }: Params) {
   try {
@@ -17,9 +23,21 @@ export async function POST(request: Request, { params }: Params) {
     const member = await isClubMember(clubId, auth.uid);
     if (!member) return NextResponse.json({ error: "Not a member" }, { status: 403 });
 
-    const state = await getMemberState(clubId, auth.uid);
-    if (!state || state.area !== "prison") {
+    const db = getDb();
+    const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+    const timezone = normalizeTimezone(club?.timezone);
+    const clubToday = getClubLocalDate(timezone);
+
+    const row = await db.query.clubMembers.findFirst({
+      where: and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, auth.uid)),
+    });
+
+    if (!row || row.area !== "prison") {
       return NextResponse.json({ error: "You must be in prison to submit punishment" }, { status: 400 });
+    }
+
+    if (normalizeDate(row.punishmentDate) === clubToday) {
+      return NextResponse.json({ error: "Punishment already submitted today" }, { status: 400 });
     }
 
     const formData = await request.formData();
@@ -28,11 +46,6 @@ export async function POST(request: Request, { params }: Params) {
     if (!photo || !(photo instanceof Blob)) {
       return NextResponse.json({ error: "Photo required" }, { status: 400 });
     }
-
-    const db = getDb();
-    const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
-    const timezone = normalizeTimezone(club?.timezone);
-    const clubToday = getClubLocalDate(timezone);
 
     const blob = await put(`clubs/${clubId}/${auth.uid}/punishment-${clubToday}.jpg`, photo, {
       access: "public",

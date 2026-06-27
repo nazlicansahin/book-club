@@ -21,9 +21,23 @@ function effectiveArea(
   punishmentDate: string | null,
   clubToday: string
 ): MemberArea {
+  const stored = (area as MemberArea) || "park";
+
+  if (stored === "prison") {
+    if (normalizeDate(punishmentDate) === clubToday) return "park";
+    return "prison";
+  }
+
   if (normalizeDate(checkInDate) === clubToday) return "pool";
-  if (normalizeDate(punishmentDate) === clubToday && area === "prison") return "park";
-  return (area as MemberArea) || "park";
+  return stored;
+}
+
+async function resetClubStreak(clubId: string) {
+  const db = getDb();
+  await db
+    .update(clubs)
+    .set({ currentStreak: 0, lastStreakDay: null })
+    .where(eq(clubs.id, clubId));
 }
 
 function toMember(
@@ -130,18 +144,23 @@ async function evaluateClubDayRollover(clubId: string) {
   }
 
   const memberRows = await db
-    .select({ checkInDate: clubMembers.checkInDate })
+    .select({
+      checkInDate: clubMembers.checkInDate,
+      area: clubMembers.area,
+      punishmentDate: clubMembers.punishmentDate,
+    })
     .from(clubMembers)
     .where(eq(clubMembers.clubId, clubId));
 
   if (memberRows.length === 0) return;
 
-  const allCheckedInToday = memberRows.every(
-    (m) => normalizeDate(m.checkInDate) === clubToday
+  const allInPoolToday = memberRows.every(
+    (m) =>
+      effectiveArea(m.area, m.checkInDate, m.punishmentDate, clubToday) === "pool"
   );
 
   const lastStreakDay = normalizeDate(club.lastStreakDay);
-  if (!allCheckedInToday || lastStreakDay === clubToday) return;
+  if (!allInPoolToday || lastStreakDay === clubToday) return;
 
   let newStreak = 1;
   if (lastStreakDay === yesterday) {
@@ -425,18 +444,50 @@ export async function markPunishmentSubmitted(
   await db
     .update(clubMembers)
     .set({
-      area: "park",
+      area: "prison",
       punishmentDate: clubToday,
       punishmentPhotoUrl: photoUrl ?? null,
     })
     .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)));
 }
 
+const DEFAULT_PUNISHMENTS = [
+  "Do 10 jumping jacks on camera!",
+  "Read your last page out loud!",
+  "Send your best silly face photo!",
+  "Balance a book on your head for 30 seconds!",
+];
+
+function randomPunishment() {
+  return DEFAULT_PUNISHMENTS[Math.floor(Math.random() * DEFAULT_PUNISHMENTS.length)];
+}
+
 export async function sendMemberToPrison(clubId: string, userId: string) {
   const db = getDb();
   await db
     .update(clubMembers)
-    .set({ area: "prison", punishmentDate: null })
+    .set({
+      area: "prison",
+      punishmentDate: null,
+      checkInDate: null,
+      punishment: randomPunishment(),
+      punishmentPhotoUrl: null,
+    })
+    .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)));
+
+  await resetClubStreak(clubId);
+}
+
+export async function leaveClub(clubId: string, userId: string) {
+  const db = getDb();
+  const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+  if (!club) throw new Error("Club not found");
+  if (club.ownerId === userId) {
+    throw new Error("Club owners must delete the club instead of leaving");
+  }
+
+  await db
+    .delete(clubMembers)
     .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)));
 }
 

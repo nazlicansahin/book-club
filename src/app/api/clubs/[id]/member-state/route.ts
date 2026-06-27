@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth-server";
 import {
   getClubWithMembers,
   getMemberState,
+  leaveClub,
   markCheckedInToday,
   markPunishmentSubmitted,
   sendMemberToPrison,
@@ -44,6 +45,9 @@ export async function PATCH(request: Request, { params }: Params) {
       }
 
       await sendMemberToPrison(id, targetId);
+    } else if (body.action === "leave") {
+      await leaveClub(id, auth.uid);
+      return NextResponse.json({ ok: true });
     } else {
       return NextResponse.json({ error: "Invalid action" }, { status: 400 });
     }
@@ -52,6 +56,8 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json(state);
   } catch (e) {
     if (e instanceof Response) return e;
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    const message = e instanceof Error ? e.message : "Server error";
+    const status = message.includes("owners must delete") ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

@@ -15,6 +15,7 @@ import {
   deleteClub,
   getClubWithMembers,
   isInPrison,
+  leaveClub,
   sendToPrison,
 } from "@/lib/club-service";
 import type { Club, ClubMember } from "@/lib/clubs";
@@ -30,13 +31,22 @@ export default function ClubMainPage() {
   const [showReading, setShowReading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [storyMember, setStoryMember] = useState<ClubMember | null>(null);
-  const [sendingToPrison, setSendingToPrison] = useState(false);
+  const [sendingToPrison, setSendingToPrison] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [leaving, setLeaving] = useState(false);
 
   async function refreshClub() {
     if (!params.id) return;
     const data = await getClubWithMembers(params.id);
     setClub(data);
+    if (params.id) {
+      const [prison, reading] = await Promise.all([
+        isInPrison(params.id),
+        canSubmitReading(params.id),
+      ]);
+      setInPrison(prison);
+      setShowReading(reading);
+    }
     return data;
   }
 
@@ -45,16 +55,6 @@ export default function ClubMainPage() {
     setLoading(true);
     refreshClub().finally(() => setLoading(false));
   }, [params.id, user, pathname]);
-
-  useEffect(() => {
-    if (!params.id) return;
-    Promise.all([isInPrison(params.id), canSubmitReading(params.id)]).then(
-      ([prison, reading]) => {
-        setInPrison(prison);
-        setShowReading(reading);
-      }
-    );
-  }, [params.id, pathname, club]);
 
   const members = useMemo(() => {
     if (!club) return { pool: [], park: [], prison: [] };
@@ -79,16 +79,14 @@ export default function ClubMainPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  async function handlePutInPrison() {
+  async function handleSendToPrison(memberId: string) {
     if (!params.id || sendingToPrison) return;
-    setSendingToPrison(true);
+    setSendingToPrison(memberId);
     try {
-      await sendToPrison(params.id);
+      await sendToPrison(params.id, memberId);
       await refreshClub();
-      setInPrison(true);
-      setShowReading(false);
     } finally {
-      setSendingToPrison(false);
+      setSendingToPrison(null);
     }
   }
 
@@ -105,6 +103,20 @@ export default function ClubMainPage() {
       router.push("/dashboard");
     } catch {
       setDeleting(false);
+    }
+  }
+
+  async function handleLeaveClub() {
+    if (!params.id || !club || leaving) return;
+    const confirmed = window.confirm(`Leave "${club.name}"?`);
+    if (!confirmed) return;
+
+    setLeaving(true);
+    try {
+      await leaveClub(params.id);
+      router.push("/dashboard");
+    } catch {
+      setLeaving(false);
     }
   }
 
@@ -157,7 +169,7 @@ export default function ClubMainPage() {
       <main className="app-content-pad-top app-content-pad-bottom flex-grow px-4 flex flex-col gap-6 max-w-md mx-auto w-full">
         <StreakCard streak={club.currentStreak} />
 
-        {allInPoolToday && (
+        {allInPoolToday && club.currentStreak > 0 && (
           <p className="text-xs font-bold font-[family-name:var(--font-space-mono)] text-secondary uppercase text-center -mt-4">
             All readers in the pool — streak secured for today!
           </p>
@@ -173,9 +185,6 @@ export default function ClubMainPage() {
                 <p className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary tracking-widest mt-1">
                   {club.inviteCode}
                 </p>
-                <p className="text-xs text-on-surface-variant font-[family-name:var(--font-courier-prime)] mt-1">
-                  Share this code so friends can join.
-                </p>
               </div>
               <button
                 type="button"
@@ -186,28 +195,55 @@ export default function ClubMainPage() {
               </button>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={handlePutInPrison}
-                disabled={sendingToPrison || inPrison}
-                className="w-full bg-error-container text-on-error-container py-3 pixel-border text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase disabled:opacity-50 active-press"
-              >
-                {sendingToPrison ? "SENDING..." : inPrison ? "YOU ARE IN PRISON" : "PUT IN PRISON (TEST)"}
-              </button>
-              <button
-                type="button"
-                onClick={handleDeleteClub}
-                disabled={deleting}
-                className="w-full bg-surface-container-low text-error py-3 pixel-border text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase disabled:opacity-50 active-press"
-              >
-                {deleting ? "DELETING..." : "DELETE CLUB"}
-              </button>
+            <div>
+              <span className="text-[10px] font-bold font-[family-name:var(--font-space-mono)] text-error uppercase block mb-2">
+                Send to Prison (resets streak)
+              </span>
+              <div className="flex flex-col gap-2">
+                {club.members.map((member) => (
+                  <button
+                    key={member.id}
+                    type="button"
+                    onClick={() => handleSendToPrison(member.id)}
+                    disabled={sendingToPrison === member.id || member.area === "prison"}
+                    className="w-full flex justify-between items-center bg-error-container text-on-error-container py-2 px-3 pixel-border text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase disabled:opacity-50 active-press"
+                  >
+                    <span className="truncate">{member.name}</span>
+                    <span className="shrink-0 ml-2">
+                      {member.area === "prison"
+                        ? "IN PRISON"
+                        : sendingToPrison === member.id
+                          ? "..."
+                          : "SEND"}
+                    </span>
+                  </button>
+                ))}
+              </div>
             </div>
+
+            <button
+              type="button"
+              onClick={handleDeleteClub}
+              disabled={deleting}
+              className="w-full bg-surface-container-low text-error py-3 pixel-border text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase disabled:opacity-50 active-press"
+            >
+              {deleting ? "DELETING..." : "DELETE CLUB"}
+            </button>
           </div>
         )}
 
-        {club.members.length === 1 && !isOwner && (
+        {!isOwner && (
+          <button
+            type="button"
+            onClick={handleLeaveClub}
+            disabled={leaving}
+            className="w-full bg-surface-container-low text-on-surface-variant py-3 pixel-border text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase disabled:opacity-50 active-press"
+          >
+            {leaving ? "LEAVING..." : "LEAVE CLUB"}
+          </button>
+        )}
+
+        {club.members.length === 1 && (
           <p className="text-xs text-on-surface-variant font-[family-name:var(--font-courier-prime)] text-center -mt-2">
             Waiting for readers to join with your invite code...
           </p>
