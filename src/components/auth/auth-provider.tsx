@@ -12,7 +12,7 @@ import {
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase";
 import { getUserProfile, syncUserProfile, type UserProfile } from "@/lib/users";
-import { signInWithGoogle, signOut as authSignOut } from "@/lib/auth-actions";
+import { completeGoogleRedirect, signInWithGoogle, signOut as authSignOut } from "@/lib/auth-actions";
 
 type AuthContextValue = {
   user: User | null;
@@ -48,22 +48,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     const auth = getFirebaseAuth();
-    const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
-      setUser(nextUser);
-      if (nextUser) {
-        try {
-          const nextProfile = await syncUserProfile();
-          setProfile(nextProfile);
-        } catch {
+    let active = true;
+
+    async function init() {
+      try {
+        await completeGoogleRedirect();
+      } catch {
+        // ignore redirect errors; onAuthStateChanged will reflect auth state
+      }
+
+      if (!active) return;
+
+      const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
+        setUser(nextUser);
+        if (nextUser) {
+          try {
+            const nextProfile = await syncUserProfile();
+            setProfile(nextProfile);
+          } catch {
+            setProfile(null);
+          }
+        } else {
           setProfile(null);
         }
-      } else {
-        setProfile(null);
-      }
-      setLoading(false);
+        setLoading(false);
+      });
+
+      return unsubscribe;
+    }
+
+    let unsubscribe: (() => void) | undefined;
+    init().then((unsub) => {
+      unsubscribe = unsub;
     });
 
-    return unsubscribe;
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
   }, [configured]);
 
   const value = useMemo<AuthContextValue>(
@@ -74,9 +96,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       configured,
       signInWithGoogle: async () => {
         const nextUser = await signInWithGoogle();
-        setUser(nextUser);
-        const nextProfile = await syncUserProfile();
-        setProfile(nextProfile);
+        if (nextUser) {
+          setUser(nextUser);
+          const nextProfile = await syncUserProfile();
+          setProfile(nextProfile);
+        }
       },
       signOut: async () => {
         await authSignOut();
