@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppHeader, BottomNav } from "@/components/layout/app-chrome";
-import { markCheckedInToday } from "@/lib/player-store";
+import { markCheckedInToday } from "@/lib/club-service";
 
 export default function CheckInPage() {
   const params = useParams<{ id: string }>();
@@ -20,12 +20,10 @@ export default function CheckInPage() {
     setPreview(url);
   }
 
-  function submit() {
+  async function submit() {
     setUploading(true);
-    markCheckedInToday(params.id);
-    setTimeout(() => {
-      router.push(`/clubs/${params.id}`);
-    }, 600);
+    await markCheckedInToday(params.id);
+    router.push(`/clubs/${params.id}`);
   }
 
   return (

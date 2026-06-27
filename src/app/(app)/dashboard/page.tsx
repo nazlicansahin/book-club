@@ -15,7 +15,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!user) return;
-    getUserClubs(user.uid)
+    getUserClubs()
       .then(setClubs)
       .finally(() => setLoading(false));
   }, [user]);

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { BottomNav } from "@/components/layout/app-chrome";
 import { GoogleSignInButton } from "@/components/auth/google-sign-in-button";
 import { useAuth } from "@/components/auth/auth-provider";
-import { getStoredCharacter } from "@/lib/player-store";
+import { getUserProfile } from "@/lib/users";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -22,9 +22,10 @@ export default function LandingPage() {
 
   useEffect(() => {
     if (loading || !user) return;
-    const hasCharacter = profile?.characterId || getStoredCharacter();
-    router.replace(hasCharacter ? "/dashboard" : "/character");
-  }, [user, loading, profile, router]);
+    getUserProfile().then((p) => {
+      router.replace(p?.characterId ? "/dashboard" : "/character");
+    });
+  }, [user, loading, router]);
 
   return (
     <>

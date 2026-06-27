@@ -11,9 +11,8 @@ import {
 } from "react";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { getFirebaseAuth, isFirebaseConfigured } from "@/lib/firebase";
-import { getUserProfile, type UserProfile } from "@/lib/users";
+import { getUserProfile, syncUserProfile, type UserProfile } from "@/lib/users";
 import { signInWithGoogle, signOut as authSignOut } from "@/lib/auth-actions";
-import { setStoredCharacter } from "@/lib/player-store";
 
 type AuthContextValue = {
   user: User | null;
@@ -38,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       return;
     }
-    const next = await getUserProfile(user.uid);
+    const next = await getUserProfile();
     setProfile(next);
   }, [user]);
 
@@ -52,10 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (nextUser) => {
       setUser(nextUser);
       if (nextUser) {
-        const nextProfile = await getUserProfile(nextUser.uid);
-        setProfile(nextProfile);
-        if (nextProfile?.characterId) {
-          setStoredCharacter(nextProfile.characterId);
+        try {
+          const nextProfile = await syncUserProfile();
+          setProfile(nextProfile);
+        } catch {
+          setProfile(null);
         }
       } else {
         setProfile(null);
@@ -74,8 +74,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       configured,
       signInWithGoogle: async () => {
         const nextUser = await signInWithGoogle();
-        const nextProfile = await getUserProfile(nextUser.uid);
         setUser(nextUser);
+        const nextProfile = await syncUserProfile();
         setProfile(nextProfile);
       },
       signOut: async () => {

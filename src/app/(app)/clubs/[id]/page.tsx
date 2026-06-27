@@ -8,35 +8,12 @@ import { BottomNav } from "@/components/layout/app-chrome";
 import { SceneSection } from "@/components/club/scene-section";
 import { CountdownTimer } from "@/components/club/streak-fire";
 import { useAuth } from "@/components/auth/auth-provider";
-import { getClubWithMembers } from "@/lib/club-service";
-import type { Club, ClubMember } from "@/lib/clubs";
 import {
   canSubmitReading,
-  getClubPlayerState,
-  getStoredCharacter,
+  getClubWithMembers,
   needsPunishmentVideo,
-} from "@/lib/player-store";
-import type { CharacterId } from "@/lib/characters";
-
-function applyPlayerState(
-  members: ClubMember[],
-  currentUid: string | undefined,
-  playerChar: CharacterId | null,
-  playerArea: ReturnType<typeof getClubPlayerState>["area"]
-): ClubMember[] {
-  if (!currentUid || !playerChar) return members;
-
-  return members.map((m) => {
-    if (m.uid !== currentUid) return m;
-    return {
-      ...m,
-      characterId: playerChar,
-      area: playerArea,
-      checkedInToday: playerArea === "pool",
-      isCurrentUser: true,
-    };
-  });
-}
+} from "@/lib/club-service";
+import type { Club } from "@/lib/clubs";
 
 export default function ClubMainPage() {
   const params = useParams<{ id: string }>();
@@ -44,37 +21,37 @@ export default function ClubMainPage() {
   const { user } = useAuth();
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
-  const [playerChar, setPlayerChar] = useState<CharacterId | null>(null);
-  const [playerArea, setPlayerArea] = useState<ReturnType<typeof getClubPlayerState>["area"]>("park");
+  const [showPunishment, setShowPunishment] = useState(false);
+  const [showReading, setShowReading] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!params.id || !user) return;
     setLoading(true);
-    getClubWithMembers(params.id, user.uid)
+    getClubWithMembers(params.id)
       .then(setClub)
       .finally(() => setLoading(false));
   }, [params.id, user, pathname]);
 
   useEffect(() => {
-    setPlayerChar(getStoredCharacter());
-    if (params.id) {
-      setPlayerArea(getClubPlayerState(params.id, "park").area);
-    }
+    if (!params.id) return;
+    Promise.all([needsPunishmentVideo(params.id), canSubmitReading(params.id)]).then(
+      ([punishment, reading]) => {
+        setShowPunishment(punishment);
+        setShowReading(reading);
+      }
+    );
   }, [params.id, pathname]);
 
   const members = useMemo(() => {
     if (!club) return { pool: [], park: [], prison: [] };
-    const updated = applyPlayerState(club.members, user?.uid, playerChar, playerArea);
     return {
-      pool: updated.filter((m) => m.area === "pool"),
-      park: updated.filter((m) => m.area === "park"),
-      prison: updated.filter((m) => m.area === "prison"),
+      pool: club.members.filter((m) => m.area === "pool"),
+      park: club.members.filter((m) => m.area === "park"),
+      prison: club.members.filter((m) => m.area === "prison"),
     };
-  }, [club, user?.uid, playerChar, playerArea]);
+  }, [club]);
 
-  const showPunishment = params.id ? needsPunishmentVideo(params.id) : false;
-  const showReading = params.id ? canSubmitReading(params.id) : false;
   const isOwner = user?.uid === club?.ownerId;
 
   async function copyInviteCode() {

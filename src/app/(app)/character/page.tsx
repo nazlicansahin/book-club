@@ -7,7 +7,6 @@ import { AppHeader, BottomNav } from "@/components/layout/app-chrome";
 import { StarField } from "@/components/layout/star-field";
 import { useAuth } from "@/components/auth/auth-provider";
 import { CHARACTERS, type CharacterId } from "@/lib/characters";
-import { setStoredCharacter } from "@/lib/player-store";
 import { saveUserCharacter } from "@/lib/users";
 
 export default function CharacterSelectPage() {
@@ -20,8 +19,7 @@ export default function CharacterSelectPage() {
     if (!user) return;
     setSaving(true);
     try {
-      setStoredCharacter(selected);
-      await saveUserCharacter(user.uid, selected);
+      await saveUserCharacter(selected);
       await refreshProfile();
       router.push("/dashboard");
     } finally {
