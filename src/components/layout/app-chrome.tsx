@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 type HeaderIconsProps = {
   className?: string;
@@ -40,13 +43,15 @@ export function AppHeader({ title = "QUEST LOG", showLogo, right }: AppHeaderPro
 }
 
 type BottomNavProps = {
-  active?: "quests" | "stats" | "config";
+  active?: "quests" | "config";
 };
 
-export function BottomNav({ active = "quests" }: BottomNavProps) {
+export function BottomNav({ active }: BottomNavProps) {
+  const pathname = usePathname();
+  const resolvedActive = active ?? (pathname === "/character" ? "config" : "quests");
+
   const items = [
     { id: "quests" as const, icon: "swords", label: "QUESTS", href: "/dashboard" },
-    { id: "stats" as const, icon: "leaderboard", label: "STATS", href: "/dashboard" },
     { id: "config" as const, icon: "settings", label: "CONFIG", href: "/character" },
   ];
 
@@ -56,15 +61,15 @@ export function BottomNav({ active = "quests" }: BottomNavProps) {
         <Link
           key={item.id}
           href={item.href}
-          className={`flex flex-col items-center justify-center p-2 transition-all duration-75 ${
-            active === item.id
+          className={`flex flex-col items-center justify-center p-2 transition-all duration-75 flex-1 max-w-[50%] ${
+            resolvedActive === item.id
               ? "bg-secondary-container text-on-secondary-container border-2 border-black scale-95"
               : "text-on-surface-variant hover:bg-surface-variant"
           }`}
         >
           <span
             className="material-symbols-outlined"
-            style={active === item.id ? { fontVariationSettings: "'FILL' 1" } : undefined}
+            style={resolvedActive === item.id ? { fontVariationSettings: "'FILL' 1" } : undefined}
           >
             {item.icon}
           </span>

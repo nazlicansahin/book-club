@@ -1,27 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppHeader, BottomNav } from "@/components/layout/app-chrome";
 import { StarField } from "@/components/layout/star-field";
 import { useAuth } from "@/components/auth/auth-provider";
 import { CHARACTERS, type CharacterId } from "@/lib/characters";
-import { saveUserCharacter } from "@/lib/users";
+import { saveUserProfile } from "@/lib/users";
 
 export default function CharacterSelectPage() {
   const router = useRouter();
-  const { user, refreshProfile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
+  const [nickname, setNickname] = useState("");
   const [selected, setSelected] = useState<CharacterId>("wizard");
   const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    if (profile) {
+      setNickname(profile.displayName ?? "");
+      if (profile.characterId) setSelected(profile.characterId);
+    }
+  }, [profile]);
 
   async function confirm() {
     if (!user) return;
+    const name = nickname.trim();
+    if (!name) return;
+
     setSaving(true);
+    setSaved(false);
     try {
-      await saveUserCharacter(selected);
+      await saveUserProfile({ displayName: name, characterId: selected });
       await refreshProfile();
-      router.push("/dashboard");
+      setSaved(true);
+      setTimeout(() => router.push("/dashboard"), 600);
     } finally {
       setSaving(false);
     }
@@ -30,15 +44,34 @@ export default function CharacterSelectPage() {
   return (
     <>
       <StarField />
-      <AppHeader />
+      <AppHeader title="CONFIG" />
       <main className="flex-grow flex flex-col items-center w-full max-w-md px-4 app-content-pad-top app-content-pad-bottom mx-auto">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 w-full">
           <h1 className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase mb-1 tracking-wider">
-            CHOOSE YOUR READER
+            SETTINGS
           </h1>
           <p className="text-sm text-on-surface-variant italic font-[family-name:var(--font-courier-prime)]">
-            The chronicles await your presence...
+            Update your nickname and reader avatar
           </p>
+        </div>
+
+        <div className="w-full mb-6">
+          <label className="text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase text-secondary block mb-2">
+            Nickname
+          </label>
+          <input
+            value={nickname}
+            onChange={(e) => setNickname(e.target.value)}
+            maxLength={32}
+            placeholder="Your display name"
+            className="w-full pixel-border bg-background px-4 py-3 text-sm font-[family-name:var(--font-courier-prime)] focus:outline-none focus:border-primary-container"
+          />
+        </div>
+
+        <div className="text-center mb-4 w-full">
+          <span className="text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase text-secondary">
+            Reader Avatar
+          </span>
         </div>
 
         <div className="grid grid-cols-2 gap-6 w-full mb-8">
@@ -96,21 +129,14 @@ export default function CharacterSelectPage() {
           <button
             type="button"
             onClick={confirm}
-            disabled={saving}
+            disabled={saving || !nickname.trim()}
             className="w-full bg-tertiary text-on-tertiary py-4 px-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all duration-75 uppercase text-lg font-bold font-[family-name:var(--font-space-mono)] disabled:opacity-60"
           >
-            {saving ? "SAVING..." : "CONFIRM SELECTION"}
+            {saving ? "SAVING..." : saved ? "SAVED!" : "SAVE"}
           </button>
-          <div className="mt-4 text-center">
-            <span className="text-[10px] font-bold font-[family-name:var(--font-space-mono)] text-outline uppercase tracking-widest flex items-center justify-center gap-2">
-              <span className="w-2 h-2 bg-outline rotate-45" />
-              Press Start to Begin
-              <span className="w-2 h-2 bg-outline rotate-45" />
-            </span>
-          </div>
         </div>
       </main>
-      <BottomNav active="stats" />
+      <BottomNav />
     </>
   );
 }

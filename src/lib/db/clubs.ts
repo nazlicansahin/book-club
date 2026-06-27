@@ -1,8 +1,10 @@
-import { and, eq } from "drizzle-orm";
+import { and, eq, inArray, lt } from "drizzle-orm";
+import { del } from "@vercel/blob";
 import type { CharacterId, MemberArea } from "@/lib/characters";
-import type { Club, ClubMember } from "@/lib/clubs";
+import type { Club, ClubMember, TodayPost } from "@/lib/clubs";
+import { getClubLocalDate, getDayEndIso, getPreviousDate, normalizeTimezone } from "@/lib/club-day";
 import { getDb } from "@/db";
-import { clubMembers, clubs, users } from "@/db/schema";
+import { clubMembers, clubs, readingPosts, readingReactions, users } from "@/db/schema";
 
 const DEFAULT_CHARACTER: CharacterId = "wizard";
 
@@ -13,18 +15,14 @@ function generateInviteCode() {
   return code;
 }
 
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 function effectiveArea(
   area: string,
   checkInDate: string | null,
-  punishmentDate: string | null
+  punishmentDate: string | null,
+  clubToday: string
 ): MemberArea {
-  const todayStr = today();
-  if (checkInDate === todayStr) return "pool";
-  if (punishmentDate === todayStr && area === "prison") return "park";
+  if (checkInDate === clubToday) return "pool";
+  if (punishmentDate === clubToday && area === "prison") return "park";
   return (area as MemberArea) || "park";
 }
 
@@ -38,9 +36,11 @@ function toMember(
     displayName: string | null;
     characterId: string | null;
   },
-  currentUid?: string
+  clubToday: string,
+  currentUid?: string,
+  todayPost?: TodayPost
 ): ClubMember {
-  const area = effectiveArea(row.area, row.checkInDate, row.punishmentDate);
+  const area = effectiveArea(row.area, row.checkInDate, row.punishmentDate, clubToday);
   return {
     id: row.userId,
     uid: row.userId,
@@ -50,7 +50,171 @@ function toMember(
     punishment: row.punishment ?? undefined,
     checkedInToday: area === "pool",
     isCurrentUser: row.userId === currentUid,
+    todayPost,
   };
+}
+
+function clubToResponse(
+  club: typeof clubs.$inferSelect,
+  members: ClubMember[],
+  timezone: string
+): Club {
+  return {
+    id: club.id,
+    name: club.name,
+    bookTitle: club.bookTitle,
+    ownerId: club.ownerId,
+    inviteCode: club.inviteCode,
+    timezone,
+    dayEndsAt: getDayEndIso(timezone),
+    currentStreak: club.currentStreak,
+    bestStreak: club.bestStreak,
+    members,
+  };
+}
+
+async function cleanupExpiredPosts(clubId: string, clubToday: string) {
+  const db = getDb();
+  const expired = await db
+    .select({ id: readingPosts.id, photoUrl: readingPosts.photoUrl })
+    .from(readingPosts)
+    .where(and(eq(readingPosts.clubId, clubId), lt(readingPosts.checkInDate, clubToday)));
+
+  if (expired.length === 0) return;
+
+  const ids = expired.map((p) => p.id);
+  await db.delete(readingReactions).where(inArray(readingReactions.postId, ids));
+  await db.delete(readingPosts).where(inArray(readingPosts.id, ids));
+
+  await Promise.allSettled(
+    expired.map((p) => {
+      if (p.photoUrl) return del(p.photoUrl);
+    })
+  );
+}
+
+async function evaluateClubDayRollover(clubId: string) {
+  const db = getDb();
+  const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+  if (!club) return;
+
+  const timezone = normalizeTimezone(club.timezone);
+  const clubToday = getClubLocalDate(timezone);
+  const yesterday = getPreviousDate(clubToday);
+
+  await cleanupExpiredPosts(clubId, clubToday);
+
+  const lastEval = club.lastStreakEvaluatedDate;
+  if (lastEval && lastEval >= yesterday) return;
+
+  const memberRows = await db
+    .select({
+      userId: clubMembers.userId,
+      checkInDate: clubMembers.checkInDate,
+      area: clubMembers.area,
+      joinedAt: clubMembers.joinedAt,
+    })
+    .from(clubMembers)
+    .where(eq(clubMembers.clubId, clubId));
+
+  const clubCreatedDate = getClubLocalDate(timezone, club.createdAt);
+
+  if (clubCreatedDate > yesterday) {
+    if (!lastEval || lastEval < yesterday) {
+      await db
+        .update(clubs)
+        .set({ lastStreakEvaluatedDate: yesterday })
+        .where(eq(clubs.id, clubId));
+    }
+    return;
+  }
+
+  if (memberRows.length > 0) {
+    const allCheckedIn =
+      memberRows.length > 0 && memberRows.every((m) => m.checkInDate === yesterday);
+
+    let newStreak = club.currentStreak;
+    if (allCheckedIn) {
+      newStreak = club.currentStreak + 1;
+    } else {
+      newStreak = 0;
+    }
+
+    const newBest = Math.max(club.bestStreak, newStreak);
+
+    await db
+      .update(clubs)
+      .set({
+        currentStreak: newStreak,
+        bestStreak: newBest,
+        lastStreakEvaluatedDate: yesterday,
+      })
+      .where(eq(clubs.id, clubId));
+
+    for (const member of memberRows) {
+      const joinedDate = getClubLocalDate(timezone, member.joinedAt);
+      if (
+        joinedDate <= yesterday &&
+        member.checkInDate !== yesterday &&
+        member.area !== "prison"
+      ) {
+        await db
+          .update(clubMembers)
+          .set({ area: "prison" })
+          .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, member.userId)));
+      }
+    }
+  } else if (!lastEval || lastEval < yesterday) {
+    await db
+      .update(clubs)
+      .set({ lastStreakEvaluatedDate: yesterday })
+      .where(eq(clubs.id, clubId));
+  }
+}
+
+async function getTodayPostsForClub(clubId: string, clubToday: string): Promise<Map<string, TodayPost>> {
+  const db = getDb();
+  const posts = await db
+    .select({
+      id: readingPosts.id,
+      userId: readingPosts.userId,
+      photoUrl: readingPosts.photoUrl,
+      note: readingPosts.note,
+    })
+    .from(readingPosts)
+    .where(and(eq(readingPosts.clubId, clubId), eq(readingPosts.checkInDate, clubToday)));
+
+  if (posts.length === 0) return new Map();
+
+  const postIds = posts.map((p) => p.id);
+  const reactions = await db
+    .select({
+      postId: readingReactions.postId,
+      userId: readingReactions.userId,
+      emoji: readingReactions.emoji,
+      displayName: users.displayName,
+    })
+    .from(readingReactions)
+    .innerJoin(users, eq(readingReactions.userId, users.id))
+    .where(inArray(readingReactions.postId, postIds));
+
+  const reactionsByPost = new Map<string, TodayPost["reactions"]>();
+  for (const r of reactions) {
+    const list = reactionsByPost.get(r.postId) ?? [];
+    list.push({ emoji: r.emoji, userId: r.userId, name: r.displayName || "Reader" });
+    reactionsByPost.set(r.postId, list);
+  }
+
+  const map = new Map<string, TodayPost>();
+  for (const post of posts) {
+    map.set(post.userId, {
+      id: post.id,
+      photoUrl: post.photoUrl,
+      note: post.note ?? undefined,
+      reactions: reactionsByPost.get(post.id) ?? [],
+    });
+  }
+  return map;
 }
 
 export async function ensureUser(
@@ -66,7 +230,6 @@ export async function ensureUser(
       .update(users)
       .set({
         email,
-        displayName,
         photoUrl: photoURL,
         updatedAt: new Date(),
       })
@@ -99,15 +262,25 @@ export async function updateUserCharacter(uid: string, characterId: CharacterId)
     .where(eq(users.id, uid));
 }
 
+export async function updateUserDisplayName(uid: string, displayName: string) {
+  const db = getDb();
+  await db
+    .update(users)
+    .set({ displayName: displayName.trim(), updatedAt: new Date() })
+    .where(eq(users.id, uid));
+}
+
 export async function createClubRecord(
   ownerId: string,
   name: string,
   bookTitle: string,
   displayName: string,
-  characterId: CharacterId
+  characterId: CharacterId,
+  timezone?: string
 ): Promise<Club> {
   const db = getDb();
   const inviteCode = generateInviteCode();
+  const tz = normalizeTimezone(timezone);
 
   const [club] = await db
     .insert(clubs)
@@ -116,6 +289,7 @@ export async function createClubRecord(
       bookTitle: bookTitle.trim(),
       ownerId,
       inviteCode,
+      timezone: tz,
     })
     .returning();
 
@@ -126,32 +300,23 @@ export async function createClubRecord(
     area: "park",
   });
 
-  return {
-    id: club.id,
-    name: club.name,
-    bookTitle: club.bookTitle,
-    ownerId: club.ownerId,
-    inviteCode: club.inviteCode,
-    currentStreak: club.currentStreak,
-    bestStreak: club.bestStreak,
-    members: [
-      {
-        id: ownerId,
-        uid: ownerId,
-        name: displayName,
-        characterId,
-        area: "park",
-        isCurrentUser: true,
-      },
-    ],
-  };
+  return clubToResponse(club, [
+    {
+      id: ownerId,
+      uid: ownerId,
+      name: displayName,
+      characterId,
+      area: "park",
+      isCurrentUser: true,
+    },
+  ], tz);
 }
 
 export async function joinClubByInviteCode(
   userId: string,
   rawCode: string,
-  displayName: string,
-  characterId: CharacterId
+  _displayName: string,
+  _characterId: CharacterId
 ): Promise<string> {
   const db = getDb();
   const code = rawCode.trim().toUpperCase();
@@ -176,9 +341,15 @@ export async function joinClubByInviteCode(
 }
 
 export async function getClubWithMembers(clubId: string, currentUid?: string): Promise<Club | null> {
+  await evaluateClubDayRollover(clubId);
+
   const db = getDb();
   const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
   if (!club) return null;
+
+  const timezone = normalizeTimezone(club.timezone);
+  const clubToday = getClubLocalDate(timezone);
+  const todayPosts = await getTodayPostsForClub(clubId, clubToday);
 
   const rows = await db
     .select({
@@ -194,16 +365,11 @@ export async function getClubWithMembers(clubId: string, currentUid?: string): P
     .innerJoin(users, eq(clubMembers.userId, users.id))
     .where(eq(clubMembers.clubId, clubId));
 
-  return {
-    id: club.id,
-    name: club.name,
-    bookTitle: club.bookTitle,
-    ownerId: club.ownerId,
-    inviteCode: club.inviteCode,
-    currentStreak: club.currentStreak,
-    bestStreak: club.bestStreak,
-    members: rows.map((row) => toMember(row, currentUid)),
-  };
+  const members = rows.map((row) =>
+    toMember(row, clubToday, currentUid, todayPosts.get(row.userId))
+  );
+
+  return clubToResponse(club, members, timezone);
 }
 
 export async function getUserClubs(uid: string): Promise<Club[]> {
@@ -223,12 +389,16 @@ export async function getUserClubs(uid: string): Promise<Club[]> {
 
 export async function getMemberState(clubId: string, userId: string) {
   const db = getDb();
+  const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+  const timezone = normalizeTimezone(club?.timezone);
+  const clubToday = getClubLocalDate(timezone);
+
   const member = await db.query.clubMembers.findFirst({
     where: and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)),
   });
   if (!member) return null;
 
-  const area = effectiveArea(member.area, member.checkInDate, member.punishmentDate);
+  const area = effectiveArea(member.area, member.checkInDate, member.punishmentDate, clubToday);
   return {
     area,
     checkInDate: member.checkInDate,
@@ -238,18 +408,86 @@ export async function getMemberState(clubId: string, userId: string) {
 
 export async function markPunishmentSubmitted(clubId: string, userId: string) {
   const db = getDb();
-  const todayStr = today();
+  const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+  const clubToday = getClubLocalDate(normalizeTimezone(club?.timezone));
   await db
     .update(clubMembers)
-    .set({ area: "park", punishmentDate: todayStr })
+    .set({ area: "park", punishmentDate: clubToday })
     .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)));
 }
 
 export async function markCheckedInToday(clubId: string, userId: string) {
   const db = getDb();
-  const todayStr = today();
+  const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+  const clubToday = getClubLocalDate(normalizeTimezone(club?.timezone));
   await db
     .update(clubMembers)
-    .set({ area: "pool", checkInDate: todayStr })
+    .set({ area: "pool", checkInDate: clubToday })
     .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)));
+}
+
+export async function createReadingPost(
+  clubId: string,
+  userId: string,
+  photoUrl: string,
+  note?: string
+) {
+  const db = getDb();
+  const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+  const clubToday = getClubLocalDate(normalizeTimezone(club?.timezone));
+
+  const existing = await db.query.readingPosts.findFirst({
+    where: and(
+      eq(readingPosts.clubId, clubId),
+      eq(readingPosts.userId, userId),
+      eq(readingPosts.checkInDate, clubToday)
+    ),
+  });
+
+  if (existing) {
+    await db
+      .update(readingPosts)
+      .set({ photoUrl, note: note ?? null })
+      .where(eq(readingPosts.id, existing.id));
+    await markCheckedInToday(clubId, userId);
+    return existing.id;
+  }
+
+  const [post] = await db
+    .insert(readingPosts)
+    .values({
+      clubId,
+      userId,
+      checkInDate: clubToday,
+      photoUrl,
+      note: note ?? null,
+    })
+    .returning();
+
+  await markCheckedInToday(clubId, userId);
+  return post.id;
+}
+
+export async function upsertReadingReaction(postId: string, userId: string, emoji: string) {
+  const db = getDb();
+  await db
+    .insert(readingReactions)
+    .values({ postId, userId, emoji })
+    .onConflictDoUpdate({
+      target: [readingReactions.postId, readingReactions.userId],
+      set: { emoji },
+    });
+}
+
+export async function getReadingPostForReaction(postId: string) {
+  const db = getDb();
+  return db.query.readingPosts.findFirst({ where: eq(readingPosts.id, postId) });
+}
+
+export async function isClubMember(clubId: string, userId: string) {
+  const db = getDb();
+  const member = await db.query.clubMembers.findFirst({
+    where: and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)),
+  });
+  return !!member;
 }

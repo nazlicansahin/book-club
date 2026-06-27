@@ -24,8 +24,9 @@ export default function PrivacyPage() {
           <p className="text-sm text-on-surface-variant font-[family-name:var(--font-courier-prime)]">
             When you sign in with Google, we store your name, email, profile photo, and chosen character.
             Club data (names, books, invite codes, reading streaks, and daily area state) is stored in our
-            database. Photos and videos you upload for reading check-ins or punishments are used to update
-            your club status.
+            database. Reading photos are stored in Vercel Blob and are visible only to your club members for
+            the current club day, then deleted. Videos you upload for punishments are used to update your
+            club status.
           </p>
         </section>
 

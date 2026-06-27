@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-server";
-import { ensureUser, getUserById, updateUserCharacter } from "@/lib/db/clubs";
+import { ensureUser, getUserById, updateUserCharacter, updateUserDisplayName } from "@/lib/db/clubs";
 import type { CharacterId } from "@/lib/characters";
 
 export async function GET(request: Request) {
@@ -44,13 +44,26 @@ export async function POST(request: Request) {
 export async function PATCH(request: Request) {
   try {
     const auth = await requireAuth(request);
-    const body = (await request.json()) as { characterId?: CharacterId };
-    if (!body.characterId) {
-      return NextResponse.json({ error: "characterId required" }, { status: 400 });
+    const body = (await request.json()) as { characterId?: CharacterId; displayName?: string };
+
+    if (!body.characterId && body.displayName === undefined) {
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
 
     await ensureUser(auth.uid, auth.email, auth.displayName, auth.photoURL);
-    await updateUserCharacter(auth.uid, body.characterId);
+
+    if (body.displayName !== undefined) {
+      const name = body.displayName.trim();
+      if (!name || name.length > 32) {
+        return NextResponse.json({ error: "Nickname must be 1–32 characters" }, { status: 400 });
+      }
+      await updateUserDisplayName(auth.uid, name);
+    }
+
+    if (body.characterId) {
+      await updateUserCharacter(auth.uid, body.characterId);
+    }
+
     const user = await getUserById(auth.uid);
 
     return NextResponse.json({

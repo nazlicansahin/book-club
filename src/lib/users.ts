@@ -29,3 +29,14 @@ export async function saveUserCharacter(characterId: CharacterId) {
     body: JSON.stringify({ characterId }),
   });
 }
+
+export async function saveUserProfile(updates: {
+  characterId?: CharacterId;
+  displayName?: string;
+}) {
+  const { authFetch } = await import("./api-client");
+  return authFetch("/api/me", {
+    method: "PATCH",
+    body: JSON.stringify(updates),
+  });
+}

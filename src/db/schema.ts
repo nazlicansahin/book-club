@@ -1,4 +1,4 @@
-import { date, integer, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
+import { date, integer, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
 
 export const users = pgTable("users", {
   id: text("id").primaryKey(),
@@ -18,8 +18,10 @@ export const clubs = pgTable("clubs", {
     .notNull()
     .references(() => users.id),
   inviteCode: text("invite_code").notNull().unique(),
+  timezone: text("timezone").default("UTC").notNull(),
   currentStreak: integer("current_streak").default(0).notNull(),
   bestStreak: integer("best_streak").default(0).notNull(),
+  lastStreakEvaluatedDate: date("last_streak_evaluated_date"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -40,4 +42,37 @@ export const clubMembers = pgTable(
     joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (table) => [primaryKey({ columns: [table.clubId, table.userId] })]
+);
+
+export const readingPosts = pgTable(
+  "reading_posts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clubId: uuid("club_id")
+      .notNull()
+      .references(() => clubs.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    checkInDate: date("check_in_date").notNull(),
+    photoUrl: text("photo_url").notNull(),
+    note: text("note"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [unique().on(table.clubId, table.userId, table.checkInDate)]
+);
+
+export const readingReactions = pgTable(
+  "reading_reactions",
+  {
+    postId: uuid("post_id")
+      .notNull()
+      .references(() => readingPosts.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id),
+    emoji: text("emoji").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.postId, table.userId] })]
 );

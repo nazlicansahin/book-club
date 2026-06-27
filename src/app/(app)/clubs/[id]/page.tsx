@@ -7,13 +7,15 @@ import { useParams, usePathname } from "next/navigation";
 import { BottomNav } from "@/components/layout/app-chrome";
 import { SceneSection } from "@/components/club/scene-section";
 import { CountdownTimer } from "@/components/club/streak-fire";
+import { StreakCard } from "@/components/club/streak-card";
+import { ReadingStoryModal } from "@/components/club/reading-story-modal";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
   canSubmitReading,
   getClubWithMembers,
   needsPunishmentVideo,
 } from "@/lib/club-service";
-import type { Club } from "@/lib/clubs";
+import type { Club, ClubMember } from "@/lib/clubs";
 
 export default function ClubMainPage() {
   const params = useParams<{ id: string }>();
@@ -24,6 +26,7 @@ export default function ClubMainPage() {
   const [showPunishment, setShowPunishment] = useState(false);
   const [showReading, setShowReading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [storyMember, setStoryMember] = useState<ClubMember | null>(null);
 
   useEffect(() => {
     if (!params.id || !user) return;
@@ -59,6 +62,10 @@ export default function ClubMainPage() {
     await navigator.clipboard.writeText(club.inviteCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  function handleMemberTap(member: ClubMember) {
+    setStoryMember(member);
   }
 
   if (loading) {
@@ -99,19 +106,13 @@ export default function ClubMainPage() {
           </span>
         </div>
         <div className="flex items-center gap-4 shrink-0">
-          <div className="flex flex-col items-end">
-            <span className="text-xs font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase">
-              DAY {club.currentStreak}
-            </span>
-            <span className="text-[10px] font-bold font-[family-name:var(--font-space-mono)] text-secondary uppercase">
-              BEST: {club.bestStreak}
-            </span>
-          </div>
-          <CountdownTimer />
+          <CountdownTimer dayEndsAt={club.dayEndsAt} />
         </div>
       </header>
 
       <main className="app-content-pad-top app-content-pad-bottom flex-grow px-4 flex flex-col gap-6 max-w-md mx-auto w-full">
+        <StreakCard streak={club.currentStreak} />
+
         {isOwner && (
           <div className="pixel-border bg-surface-container-high p-4 pixel-shadow">
             <div className="flex justify-between items-start gap-2">
@@ -143,10 +144,21 @@ export default function ClubMainPage() {
           </p>
         )}
 
-        <SceneSection area="pool" label="POOL" members={members.pool} />
+        <SceneSection area="pool" label="POOL" members={members.pool} onMemberTap={handleMemberTap} />
         <SceneSection area="park" label="PARK" members={members.park} />
         <SceneSection area="prison" label="PRISON" members={members.prison} />
       </main>
+
+      {storyMember && (
+        <ReadingStoryModal
+          clubId={club.id}
+          member={storyMember}
+          onClose={() => setStoryMember(null)}
+          onReaction={() => {
+            getClubWithMembers(club.id).then(setClub);
+          }}
+        />
+      )}
 
       {showPunishment && (
         <div className="app-fab-bottom fixed right-4 z-50">
@@ -180,7 +192,7 @@ export default function ClubMainPage() {
         </div>
       )}
 
-      <BottomNav active="quests" />
+      <BottomNav />
     </>
   );
 }

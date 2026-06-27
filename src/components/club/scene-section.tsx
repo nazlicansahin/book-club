@@ -26,9 +26,12 @@ type SceneSectionProps = {
   area: keyof typeof SCENE_IMAGES;
   label: string;
   members: ClubMember[];
+  onMemberTap?: (member: ClubMember) => void;
 };
 
-export function SceneSection({ area, label, members }: SceneSectionProps) {
+export function SceneSection({ area, label, members, onMemberTap }: SceneSectionProps) {
+  const tappable = area === "pool" && !!onMemberTap;
+
   return (
     <section className="pixel-border bg-surface-container-high overflow-hidden pixel-shadow relative h-48 md:h-64">
       <div className="absolute inset-0 z-0">
@@ -81,14 +84,29 @@ export function SceneSection({ area, label, members }: SceneSectionProps) {
           }`}
         >
           {members.map((member, i) => (
-            <div
+            <button
               key={member.id}
-              className="flex flex-col items-center"
+              type="button"
+              disabled={!tappable}
+              onClick={() => tappable && onMemberTap?.(member)}
+              className={`flex flex-col items-center bg-transparent border-0 p-0 ${
+                tappable ? "cursor-pointer active:scale-95 transition-transform" : ""
+              }`}
               style={{ transform: i === 1 && area === "pool" ? "translateY(8px)" : undefined }}
             >
-              <CharacterSprite characterId={member.characterId} area={area} delay={i * 0.2} />
+              <div className="relative">
+                <CharacterSprite characterId={member.characterId} area={area} delay={i * 0.2} />
+                {tappable && member.todayPost && (
+                  <span
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-tertiary pixel-border flex items-center justify-center"
+                    aria-hidden
+                  >
+                    <span className="material-symbols-outlined text-[12px] text-on-tertiary">photo_camera</span>
+                  </span>
+                )}
+              </div>
               <MemberLabel name={member.name} />
-            </div>
+            </button>
           ))}
           {members.length === 0 && (
             <p className="text-xs font-[family-name:var(--font-space-mono)] text-on-surface-variant uppercase w-full text-center pb-2">

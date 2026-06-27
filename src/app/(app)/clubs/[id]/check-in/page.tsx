@@ -4,26 +4,36 @@ import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { AppHeader, BottomNav } from "@/components/layout/app-chrome";
-import { markCheckedInToday } from "@/lib/club-service";
+import { submitCheckIn } from "@/lib/club-service";
 
 export default function CheckInPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const [note, setNote] = useState("");
   const [preview, setPreview] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setPreview(url);
+    const selected = e.target.files?.[0];
+    if (!selected) return;
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(selected);
+    setPreview(URL.createObjectURL(selected));
   }
 
   async function submit() {
+    if (!file) return;
     setUploading(true);
-    await markCheckedInToday(params.id);
-    router.push(`/clubs/${params.id}`);
+    setError(null);
+    try {
+      await submitCheckIn(params.id, file, note.trim() || undefined);
+      router.push(`/clubs/${params.id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Upload failed");
+      setUploading(false);
+    }
   }
 
   return (
@@ -63,10 +73,14 @@ export default function CheckInPage() {
           className="w-full pixel-border bg-background text-on-surface px-4 py-3 mb-6 text-sm font-[family-name:var(--font-courier-prime)] placeholder:text-on-surface-variant focus:outline-none focus:border-primary-container"
         />
 
+        {error && (
+          <p className="text-xs font-bold font-[family-name:var(--font-space-mono)] text-error mb-4">{error}</p>
+        )}
+
         <button
           type="button"
           onClick={submit}
-          disabled={!preview || uploading}
+          disabled={!file || uploading}
           className="w-full bg-tertiary text-on-tertiary py-4 pixel-border pixel-shadow uppercase text-lg font-bold font-[family-name:var(--font-space-mono)] disabled:opacity-50 active-press transition-all"
         >
           {uploading ? "+1 READ!" : "UPLOAD"}

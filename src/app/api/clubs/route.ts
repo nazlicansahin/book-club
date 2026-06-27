@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const auth = await requireAuth(request);
-    const body = (await request.json()) as { name?: string; bookTitle?: string };
+    const body = (await request.json()) as { name?: string; bookTitle?: string; timezone?: string };
     if (!body.name?.trim() || !body.bookTitle?.trim()) {
       return NextResponse.json({ error: "Name and book title required" }, { status: 400 });
     }
@@ -37,7 +37,8 @@ export async function POST(request: Request) {
       body.name,
       body.bookTitle,
       displayName,
-      characterId
+      characterId,
+      body.timezone
     );
 
     return NextResponse.json(club);
