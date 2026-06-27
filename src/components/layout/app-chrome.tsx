@@ -25,7 +25,7 @@ type AppHeaderProps = {
 
 export function AppHeader({ title = "QUEST LOG", showLogo, right }: AppHeaderProps) {
   return (
-    <header className="bg-surface-container border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center w-full px-4 h-16 fixed top-0 z-50">
+    <header className="app-shell-header bg-surface-container border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center w-full px-4 h-16 fixed top-0 z-50">
       <div className="text-xl font-bold font-[family-name:var(--font-space-mono)] text-tertiary-fixed-dim uppercase flex items-center gap-2 tracking-tighter">
         {showLogo && (
           <span className="material-symbols-outlined text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>
@@ -51,7 +51,7 @@ export function BottomNav({ active = "quests" }: BottomNavProps) {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface-container-highest border-t-4 border-black shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)]">
+    <nav className="app-shell-nav fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2 bg-surface-container-highest border-t-4 border-black shadow-[0px_-4px_0px_0px_rgba(0,0,0,1)]">
       {items.map((item) => (
         <Link
           key={item.id}

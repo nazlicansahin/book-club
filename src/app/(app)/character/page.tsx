@@ -31,7 +31,7 @@ export default function CharacterSelectPage() {
     <>
       <StarField />
       <AppHeader />
-      <main className="flex-grow flex flex-col items-center w-full max-w-md px-4 pt-24 pb-32 mx-auto">
+      <main className="flex-grow flex flex-col items-center w-full max-w-md px-4 app-content-pad-top app-content-pad-bottom mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase mb-1 tracking-wider">
             CHOOSE YOUR READER

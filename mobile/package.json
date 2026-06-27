@@ -1,0 +1,27 @@
+{
+  "name": "quest-log-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Capacitor shell for Quest Log (iOS + Android)",
+  "scripts": {
+    "sync": "cap sync",
+    "ios": "cap open ios",
+    "android": "cap open android",
+    "copy": "cap copy"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.2.0",
+    "@capacitor/app": "^7.0.1",
+    "@capacitor/core": "^7.2.0",
+    "@capacitor/ios": "^7.2.0",
+    "@capacitor/splash-screen": "^7.0.1",
+    "@capacitor/status-bar": "^7.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.2.0",
+    "typescript": "^5"
+  },
+  "capacitor": {
+    "platforms": ["ios", "android"]
+  }
+}

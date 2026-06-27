@@ -84,7 +84,7 @@ export default function ClubMainPage() {
 
   return (
     <>
-      <header className="bg-surface-container border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center w-full px-4 h-16 fixed top-0 z-50">
+      <header className="app-shell-header bg-surface-container border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center w-full px-4 h-16 fixed top-0 z-50">
         <div className="flex items-center gap-2 min-w-0">
           <Image
             src="/assets/icons/fire-medium.png"
@@ -111,7 +111,7 @@ export default function ClubMainPage() {
         </div>
       </header>
 
-      <main className="mt-20 flex-grow px-4 flex flex-col gap-6 pb-32 max-w-md mx-auto w-full">
+      <main className="app-content-pad-top app-content-pad-bottom flex-grow px-4 flex flex-col gap-6 max-w-md mx-auto w-full">
         {isOwner && (
           <div className="pixel-border bg-surface-container-high p-4 pixel-shadow">
             <div className="flex justify-between items-start gap-2">
@@ -149,7 +149,7 @@ export default function ClubMainPage() {
       </main>
 
       {showPunishment && (
-        <div className="fixed bottom-24 right-4 z-50">
+        <div className="app-fab-bottom fixed right-4 z-50">
           <Link
             href={`/clubs/${club.id}/punishment`}
             className="flex items-center gap-2 bg-error-container text-on-error-container p-4 pixel-border pixel-shadow-lg transition-all duration-75 active:translate-x-1 active:translate-y-1 active:shadow-none"
@@ -165,7 +165,7 @@ export default function ClubMainPage() {
       )}
 
       {showReading && (
-        <div className="fixed bottom-24 right-4 z-50">
+        <div className="app-fab-bottom fixed right-4 z-50">
           <Link
             href={`/clubs/${club.id}/check-in`}
             className="flex items-center gap-2 bg-tertiary text-on-tertiary p-4 pixel-border pixel-shadow-lg transition-all duration-75 active:translate-x-1 active:translate-y-1 active:shadow-none"

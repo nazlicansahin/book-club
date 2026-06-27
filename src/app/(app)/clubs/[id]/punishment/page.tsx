@@ -27,7 +27,7 @@ export default function PunishmentPage() {
   return (
     <>
       <AppHeader title="PUNISHMENT" />
-      <main className="pt-24 px-4 max-w-md mx-auto pb-32">
+      <main className="app-content-pad-top app-content-pad-bottom px-4 max-w-md mx-auto">
         <div className="text-center mb-8">
           <span
             className="material-symbols-outlined text-4xl text-error mb-2"

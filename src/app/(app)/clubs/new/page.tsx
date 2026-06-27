@@ -33,7 +33,7 @@ export default function NewClubPage() {
   return (
     <>
       <AppHeader title="NEW CLUB" />
-      <main className="pt-24 px-4 max-w-md mx-auto pb-32">
+      <main className="app-content-pad-top app-content-pad-bottom px-4 max-w-md mx-auto">
         <h1 className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase mb-8">
           NEW CLUB
         </h1>

@@ -53,7 +53,7 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <main className="relative min-h-screen pb-24">
+      <main className={`relative min-h-screen ${user ? "pb-32 app-content-pad-bottom" : "pb-16"}`}>
         <div className="absolute inset-0 bookshelf-pattern opacity-10 pointer-events-none" />
 
         <section className="relative pt-24 pb-32 px-4 flex flex-col items-center justify-center text-center">
@@ -248,7 +248,7 @@ export default function LandingPage() {
           </div>
         </div>
       </main>
-      <BottomNav active="quests" />
+      {user && <BottomNav active="quests" />}
     </>
   );
 }

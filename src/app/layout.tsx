@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Space_Mono, Courier_Prime } from "next/font/google";
 import { AuthProvider } from "@/components/auth/auth-provider";
+import { MobileInit } from "@/components/layout/mobile-init";
 import "./globals.css";
 
 const spaceMono = Space_Mono({
@@ -18,6 +19,23 @@ const courierPrime = Courier_Prime({
 export const metadata: Metadata = {
   title: "Quest Log — Book Club",
   description: "Read daily. Keep the streak alive.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Quest Log",
+  },
+  icons: {
+    icon: "/assets/icons/fire-medium.png",
+    apple: "/assets/icons/fire-medium.png",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#08122b",
 };
 
 export default function RootLayout({
@@ -37,6 +55,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col overflow-x-hidden">
+        <MobileInit />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
