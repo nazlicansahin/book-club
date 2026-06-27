@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "383866729239",
+    "project_id": "quest-log-bc",
+    "storage_bucket": "quest-log-bc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:383866729239:android:4e3fa44c428129ce767d52",
+        "android_client_info": {
+          "package_name": "com.questlog.bookclub"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "383866729239-scqrj3rtali81e4mb9r7eq66gm3htepp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCHvg_jJsWZdlXX_H3q3PhyYLCGX9ipClE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "383866729239-scqrj3rtali81e4mb9r7eq66gm3htepp.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "383866729239-620p8vt37tbpn381nuk9fllvaoidoecn.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.questlog.bookclub"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

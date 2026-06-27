@@ -51,5 +51,14 @@
 	<string>Quest Log lets you pick photos for reading check-ins.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Quest Log uses your microphone when recording punishment videos.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.383866729239-620p8vt37tbpn381nuk9fllvaoidoecn</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>
