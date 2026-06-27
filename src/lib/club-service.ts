@@ -39,6 +39,11 @@ export async function joinClubByCode(user: User, rawCode: string): Promise<strin
   return data.clubId;
 }
 
+export async function deleteClub(clubId: string) {
+  invalidateClubsCache();
+  await authFetch(`/api/clubs/${clubId}`, { method: "DELETE" });
+}
+
 export async function getClubWithMembers(clubId: string): Promise<Club | null> {
   try {
     return (await authFetch(`/api/clubs/${clubId}`)) as Club;
@@ -57,10 +62,21 @@ export async function getClubPlayerState(clubId: string): Promise<ClubPlayerStat
   return data;
 }
 
-export async function markPunishmentSubmitted(clubId: string) {
+export async function sendToPrison(clubId: string, userId?: string) {
   await authFetch(`/api/clubs/${clubId}/member-state`, {
     method: "PATCH",
-    body: JSON.stringify({ action: "punishment" }),
+    body: JSON.stringify({ action: "send-to-prison", userId }),
+  });
+}
+
+export async function submitPunishmentPhoto(clubId: string, photo: File) {
+  const formData = new FormData();
+  formData.append("photo", photo);
+
+  const { authFetchForm } = await import("./api-client");
+  return authFetchForm(`/api/clubs/${clubId}/punishment`, {
+    method: "POST",
+    body: formData,
   });
 }
 
@@ -83,7 +99,7 @@ export async function reactToPost(clubId: string, postId: string, emoji: string)
   });
 }
 
-export async function needsPunishmentVideo(clubId: string): Promise<boolean> {
+export async function isInPrison(clubId: string): Promise<boolean> {
   const state = await getClubPlayerState(clubId);
   return state.area === "prison";
 }

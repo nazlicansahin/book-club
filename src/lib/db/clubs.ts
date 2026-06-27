@@ -21,8 +21,8 @@ function effectiveArea(
   punishmentDate: string | null,
   clubToday: string
 ): MemberArea {
-  if (checkInDate === clubToday) return "pool";
-  if (punishmentDate === clubToday && area === "prison") return "park";
+  if (normalizeDate(checkInDate) === clubToday) return "pool";
+  if (normalizeDate(punishmentDate) === clubToday && area === "prison") return "park";
   return (area as MemberArea) || "park";
 }
 
@@ -93,9 +93,15 @@ async function cleanupExpiredPosts(clubId: string, clubToday: string) {
   );
 }
 
+function normalizeDate(value: string | Date | null | undefined): string | null {
+  if (!value) return null;
+  if (typeof value === "string") return value.slice(0, 10);
+  return value.toISOString().slice(0, 10);
+}
+
 async function evaluateClubDayRollover(clubId: string) {
   const db = getDb();
-  const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+  let club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
   if (!club) return;
 
   const timezone = normalizeTimezone(club.timezone);
@@ -104,10 +110,54 @@ async function evaluateClubDayRollover(clubId: string) {
 
   await cleanupExpiredPosts(clubId, clubToday);
 
-  const lastEval = club.lastStreakEvaluatedDate;
-  if (lastEval && lastEval >= yesterday) return;
+  const lastEval = normalizeDate(club.lastStreakEvaluatedDate);
+  const clubCreatedDate = getClubLocalDate(timezone, club.createdAt);
+
+  if (!lastEval || lastEval < yesterday) {
+    if (clubCreatedDate <= yesterday) {
+      const lastStreakDay = normalizeDate(club.lastStreakDay);
+      if (lastStreakDay !== yesterday) {
+        await db.update(clubs).set({ currentStreak: 0 }).where(eq(clubs.id, clubId));
+      }
+    }
+
+    await db
+      .update(clubs)
+      .set({ lastStreakEvaluatedDate: yesterday })
+      .where(eq(clubs.id, clubId));
+
+    club = (await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) }))!;
+  }
 
   const memberRows = await db
+    .select({ checkInDate: clubMembers.checkInDate })
+    .from(clubMembers)
+    .where(eq(clubMembers.clubId, clubId));
+
+  if (memberRows.length === 0) return;
+
+  const allCheckedInToday = memberRows.every(
+    (m) => normalizeDate(m.checkInDate) === clubToday
+  );
+
+  const lastStreakDay = normalizeDate(club.lastStreakDay);
+  if (!allCheckedInToday || lastStreakDay === clubToday) return;
+
+  let newStreak = 1;
+  if (lastStreakDay === yesterday) {
+    newStreak = club.currentStreak + 1;
+  }
+
+  await db
+    .update(clubs)
+    .set({
+      currentStreak: newStreak,
+      bestStreak: Math.max(club.bestStreak, newStreak),
+      lastStreakDay: clubToday,
+    })
+    .where(eq(clubs.id, clubId));
+
+  for (const member of await db
     .select({
       userId: clubMembers.userId,
       checkInDate: clubMembers.checkInDate,
@@ -115,60 +165,18 @@ async function evaluateClubDayRollover(clubId: string) {
       joinedAt: clubMembers.joinedAt,
     })
     .from(clubMembers)
-    .where(eq(clubMembers.clubId, clubId));
-
-  const clubCreatedDate = getClubLocalDate(timezone, club.createdAt);
-
-  if (clubCreatedDate > yesterday) {
-    if (!lastEval || lastEval < yesterday) {
+    .where(eq(clubMembers.clubId, clubId))) {
+    const joinedDate = getClubLocalDate(timezone, member.joinedAt);
+    if (
+      joinedDate <= yesterday &&
+      normalizeDate(member.checkInDate) !== yesterday &&
+      member.area !== "prison"
+    ) {
       await db
-        .update(clubs)
-        .set({ lastStreakEvaluatedDate: yesterday })
-        .where(eq(clubs.id, clubId));
+        .update(clubMembers)
+        .set({ area: "prison" })
+        .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, member.userId)));
     }
-    return;
-  }
-
-  if (memberRows.length > 0) {
-    const allCheckedIn =
-      memberRows.length > 0 && memberRows.every((m) => m.checkInDate === yesterday);
-
-    let newStreak = club.currentStreak;
-    if (allCheckedIn) {
-      newStreak = club.currentStreak + 1;
-    } else {
-      newStreak = 0;
-    }
-
-    const newBest = Math.max(club.bestStreak, newStreak);
-
-    await db
-      .update(clubs)
-      .set({
-        currentStreak: newStreak,
-        bestStreak: newBest,
-        lastStreakEvaluatedDate: yesterday,
-      })
-      .where(eq(clubs.id, clubId));
-
-    for (const member of memberRows) {
-      const joinedDate = getClubLocalDate(timezone, member.joinedAt);
-      if (
-        joinedDate <= yesterday &&
-        member.checkInDate !== yesterday &&
-        member.area !== "prison"
-      ) {
-        await db
-          .update(clubMembers)
-          .set({ area: "prison" })
-          .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, member.userId)));
-      }
-    }
-  } else if (!lastEval || lastEval < yesterday) {
-    await db
-      .update(clubs)
-      .set({ lastStreakEvaluatedDate: yesterday })
-      .where(eq(clubs.id, clubId));
   }
 }
 
@@ -406,14 +414,46 @@ export async function getMemberState(clubId: string, userId: string) {
   };
 }
 
-export async function markPunishmentSubmitted(clubId: string, userId: string) {
+export async function markPunishmentSubmitted(
+  clubId: string,
+  userId: string,
+  photoUrl?: string
+) {
   const db = getDb();
   const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
   const clubToday = getClubLocalDate(normalizeTimezone(club?.timezone));
   await db
     .update(clubMembers)
-    .set({ area: "park", punishmentDate: clubToday })
+    .set({
+      area: "park",
+      punishmentDate: clubToday,
+      punishmentPhotoUrl: photoUrl ?? null,
+    })
     .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)));
+}
+
+export async function sendMemberToPrison(clubId: string, userId: string) {
+  const db = getDb();
+  await db
+    .update(clubMembers)
+    .set({ area: "prison", punishmentDate: null })
+    .where(and(eq(clubMembers.clubId, clubId), eq(clubMembers.userId, userId)));
+}
+
+export async function deleteClub(clubId: string, ownerId: string) {
+  const db = getDb();
+  const club = await db.query.clubs.findFirst({ where: eq(clubs.id, clubId) });
+  if (!club) throw new Error("Club not found");
+  if (club.ownerId !== ownerId) throw new Error("Only the club owner can delete this club");
+
+  const posts = await db
+    .select({ photoUrl: readingPosts.photoUrl })
+    .from(readingPosts)
+    .where(eq(readingPosts.clubId, clubId));
+
+  await db.delete(clubs).where(eq(clubs.id, clubId));
+
+  await Promise.allSettled(posts.map((p) => (p.photoUrl ? del(p.photoUrl) : undefined)));
 }
 
 export async function markCheckedInToday(clubId: string, userId: string) {

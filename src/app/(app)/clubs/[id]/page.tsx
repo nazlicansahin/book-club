@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useParams, usePathname } from "next/navigation";
+import { useParams, usePathname, useRouter } from "next/navigation";
 import { BottomNav } from "@/components/layout/app-chrome";
 import { SceneSection } from "@/components/club/scene-section";
 import { CountdownTimer } from "@/components/club/streak-fire";
@@ -12,39 +12,49 @@ import { ReadingStoryModal } from "@/components/club/reading-story-modal";
 import { useAuth } from "@/components/auth/auth-provider";
 import {
   canSubmitReading,
+  deleteClub,
   getClubWithMembers,
-  needsPunishmentVideo,
+  isInPrison,
+  sendToPrison,
 } from "@/lib/club-service";
 import type { Club, ClubMember } from "@/lib/clubs";
 
 export default function ClubMainPage() {
   const params = useParams<{ id: string }>();
   const pathname = usePathname();
+  const router = useRouter();
   const { user } = useAuth();
   const [club, setClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showPunishment, setShowPunishment] = useState(false);
+  const [inPrison, setInPrison] = useState(false);
   const [showReading, setShowReading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [storyMember, setStoryMember] = useState<ClubMember | null>(null);
+  const [sendingToPrison, setSendingToPrison] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function refreshClub() {
+    if (!params.id) return;
+    const data = await getClubWithMembers(params.id);
+    setClub(data);
+    return data;
+  }
 
   useEffect(() => {
     if (!params.id || !user) return;
     setLoading(true);
-    getClubWithMembers(params.id)
-      .then(setClub)
-      .finally(() => setLoading(false));
+    refreshClub().finally(() => setLoading(false));
   }, [params.id, user, pathname]);
 
   useEffect(() => {
     if (!params.id) return;
-    Promise.all([needsPunishmentVideo(params.id), canSubmitReading(params.id)]).then(
-      ([punishment, reading]) => {
-        setShowPunishment(punishment);
+    Promise.all([isInPrison(params.id), canSubmitReading(params.id)]).then(
+      ([prison, reading]) => {
+        setInPrison(prison);
         setShowReading(reading);
       }
     );
-  }, [params.id, pathname]);
+  }, [params.id, pathname, club]);
 
   const members = useMemo(() => {
     if (!club) return { pool: [], park: [], prison: [] };
@@ -55,6 +65,11 @@ export default function ClubMainPage() {
     };
   }, [club]);
 
+  const allInPoolToday =
+    club &&
+    club.members.length > 0 &&
+    club.members.every((m) => m.area === "pool");
+
   const isOwner = user?.uid === club?.ownerId;
 
   async function copyInviteCode() {
@@ -62,6 +77,35 @@ export default function ClubMainPage() {
     await navigator.clipboard.writeText(club.inviteCode);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handlePutInPrison() {
+    if (!params.id || sendingToPrison) return;
+    setSendingToPrison(true);
+    try {
+      await sendToPrison(params.id);
+      await refreshClub();
+      setInPrison(true);
+      setShowReading(false);
+    } finally {
+      setSendingToPrison(false);
+    }
+  }
+
+  async function handleDeleteClub() {
+    if (!params.id || !club || deleting) return;
+    const confirmed = window.confirm(
+      `Delete "${club.name}"? This cannot be undone. All members will be removed.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      await deleteClub(params.id);
+      router.push("/dashboard");
+    } catch {
+      setDeleting(false);
+    }
   }
 
   function handleMemberTap(member: ClubMember) {
@@ -113,8 +157,14 @@ export default function ClubMainPage() {
       <main className="app-content-pad-top app-content-pad-bottom flex-grow px-4 flex flex-col gap-6 max-w-md mx-auto w-full">
         <StreakCard streak={club.currentStreak} />
 
+        {allInPoolToday && (
+          <p className="text-xs font-bold font-[family-name:var(--font-space-mono)] text-secondary uppercase text-center -mt-4">
+            All readers in the pool — streak secured for today!
+          </p>
+        )}
+
         {isOwner && (
-          <div className="pixel-border bg-surface-container-high p-4 pixel-shadow">
+          <div className="pixel-border bg-surface-container-high p-4 pixel-shadow space-y-4">
             <div className="flex justify-between items-start gap-2">
               <div>
                 <span className="text-[10px] font-bold font-[family-name:var(--font-space-mono)] text-secondary uppercase">
@@ -124,7 +174,7 @@ export default function ClubMainPage() {
                   {club.inviteCode}
                 </p>
                 <p className="text-xs text-on-surface-variant font-[family-name:var(--font-courier-prime)] mt-1">
-                  Share this code so friends can join. Only you are in the club until someone uses it.
+                  Share this code so friends can join.
                 </p>
               </div>
               <button
@@ -135,10 +185,29 @@ export default function ClubMainPage() {
                 {copied ? "COPIED!" : "COPY"}
               </button>
             </div>
+
+            <div className="flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handlePutInPrison}
+                disabled={sendingToPrison || inPrison}
+                className="w-full bg-error-container text-on-error-container py-3 pixel-border text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase disabled:opacity-50 active-press"
+              >
+                {sendingToPrison ? "SENDING..." : inPrison ? "YOU ARE IN PRISON" : "PUT IN PRISON (TEST)"}
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteClub}
+                disabled={deleting}
+                className="w-full bg-surface-container-low text-error py-3 pixel-border text-xs font-bold font-[family-name:var(--font-space-mono)] uppercase disabled:opacity-50 active-press"
+              >
+                {deleting ? "DELETING..." : "DELETE CLUB"}
+              </button>
+            </div>
           </div>
         )}
 
-        {club.members.length === 1 && (
+        {club.members.length === 1 && !isOwner && (
           <p className="text-xs text-on-surface-variant font-[family-name:var(--font-courier-prime)] text-center -mt-2">
             Waiting for readers to join with your invite code...
           </p>
@@ -155,29 +224,34 @@ export default function ClubMainPage() {
           member={storyMember}
           onClose={() => setStoryMember(null)}
           onReaction={() => {
-            getClubWithMembers(club.id).then(setClub);
+            refreshClub();
           }}
         />
       )}
 
-      {showPunishment && (
-        <div className="app-fab-bottom fixed right-4 z-50">
+      <div className="app-fab-bottom fixed right-4 z-50 flex flex-col gap-3 items-end">
+        {inPrison ? (
           <Link
             href={`/clubs/${club.id}/punishment`}
-            className="flex items-center gap-2 bg-error-container text-on-error-container p-4 pixel-border pixel-shadow-lg transition-all duration-75 active:translate-x-1 active:translate-y-1 active:shadow-none"
+            className="flex items-center gap-2 bg-error text-on-error p-4 pixel-border pixel-shadow-lg transition-all duration-75 active:translate-x-1 active:translate-y-1 active:shadow-none"
           >
             <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
-              videocam
+              photo_camera
             </span>
             <span className="text-sm font-bold font-[family-name:var(--font-space-mono)] uppercase">
-              Send Punishment
+              Punishment Photo
             </span>
           </Link>
-        </div>
-      )}
+        ) : (
+          <span className="flex items-center gap-2 bg-surface-container-high text-on-surface-variant p-4 pixel-border opacity-70 cursor-not-allowed">
+            <span className="material-symbols-outlined">photo_camera</span>
+            <span className="text-sm font-bold font-[family-name:var(--font-space-mono)] uppercase">
+              Punishment Photo
+            </span>
+          </span>
+        )}
 
-      {showReading && (
-        <div className="app-fab-bottom fixed right-4 z-50">
+        {showReading && (
           <Link
             href={`/clubs/${club.id}/check-in`}
             className="flex items-center gap-2 bg-tertiary text-on-tertiary p-4 pixel-border pixel-shadow-lg transition-all duration-75 active:translate-x-1 active:translate-y-1 active:shadow-none"
@@ -189,8 +263,8 @@ export default function ClubMainPage() {
               ADD READING
             </span>
           </Link>
-        </div>
-      )}
+        )}
+      </div>
 
       <BottomNav />
     </>

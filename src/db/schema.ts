@@ -22,6 +22,7 @@ export const clubs = pgTable("clubs", {
   currentStreak: integer("current_streak").default(0).notNull(),
   bestStreak: integer("best_streak").default(0).notNull(),
   lastStreakEvaluatedDate: date("last_streak_evaluated_date"),
+  lastStreakDay: date("last_streak_day"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
 
@@ -37,6 +38,7 @@ export const clubMembers = pgTable(
     role: text("role").notNull(),
     area: text("area").default("park").notNull(),
     punishment: text("punishment"),
+    punishmentPhotoUrl: text("punishment_photo_url"),
     checkInDate: date("check_in_date"),
     punishmentDate: date("punishment_date"),
     joinedAt: timestamp("joined_at", { withTimezone: true }).defaultNow().notNull(),
