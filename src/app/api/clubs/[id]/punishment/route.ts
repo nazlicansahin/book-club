@@ -3,9 +3,12 @@ import { eq, and } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/lib/auth-server";
 import { getClubLocalDate, normalizeTimezone } from "@/lib/club-day";
+import { parseUploadPhoto } from "@/lib/parse-upload-photo";
 import { isClubMember, markPunishmentSubmitted } from "@/lib/db/clubs";
 import { getDb } from "@/db";
 import { clubMembers, clubs } from "@/db/schema";
+
+export const runtime = "nodejs";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -40,16 +43,15 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: "Punishment already submitted today" }, { status: 400 });
     }
 
-    const formData = await request.formData();
-    const photo = formData.get("photo");
-
-    if (!photo || !(photo instanceof Blob)) {
+    const { buffer: photoBuffer } = await parseUploadPhoto(request);
+    if (photoBuffer.length === 0) {
       return NextResponse.json({ error: "Photo required" }, { status: 400 });
     }
 
-    const blob = await put(`clubs/${clubId}/${auth.uid}/punishment-${clubToday}.jpg`, photo, {
+    const blob = await put(`clubs/${clubId}/${auth.uid}/punishment-${clubToday}.jpg`, photoBuffer, {
       access: "public",
-      contentType: photo.type || "image/jpeg",
+      contentType: "image/jpeg",
+      addRandomSuffix: true,
     });
 
     await markPunishmentSubmitted(clubId, auth.uid, blob.url);
@@ -58,6 +60,8 @@ export async function POST(request: Request, { params }: Params) {
   } catch (e) {
     if (e instanceof Response) return e;
     console.error("punishment error:", e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    const message = e instanceof Error ? e.message : "Server error";
+    const status = message === "Photo required" ? 400 : 500;
+    return NextResponse.json({ error: status === 400 ? message : "Upload failed. Try again." }, { status });
   }
 }

@@ -78,25 +78,20 @@ export async function leaveClub(clubId: string) {
 }
 
 export async function submitPunishmentPhoto(clubId: string, photo: File) {
-  const formData = new FormData();
-  formData.append("photo", photo);
-
-  const { authFetchForm } = await import("./api-client");
-  return authFetchForm(`/api/clubs/${clubId}/punishment`, {
+  const { photoFileToBase64 } = await import("./image-upload-client");
+  const photoBase64 = await photoFileToBase64(photo);
+  return authFetch(`/api/clubs/${clubId}/punishment`, {
     method: "POST",
-    body: formData,
+    body: JSON.stringify({ photoBase64 }),
   });
 }
 
 export async function submitCheckIn(clubId: string, photo: File, note?: string) {
-  const formData = new FormData();
-  formData.append("photo", photo);
-  if (note) formData.append("note", note);
-
-  const { authFetchForm } = await import("./api-client");
-  return authFetchForm(`/api/clubs/${clubId}/check-in`, {
+  const { photoFileToBase64 } = await import("./image-upload-client");
+  const photoBase64 = await photoFileToBase64(photo);
+  return authFetch(`/api/clubs/${clubId}/check-in`, {
     method: "POST",
-    body: formData,
+    body: JSON.stringify({ photoBase64, note }),
   });
 }
 

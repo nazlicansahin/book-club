@@ -7,9 +7,12 @@ import {
   isClubMember,
 } from "@/lib/db/clubs";
 import { getClubLocalDate, normalizeTimezone } from "@/lib/club-day";
+import { parseUploadPhoto } from "@/lib/parse-upload-photo";
 import { getDb } from "@/db";
 import { clubs } from "@/db/schema";
 import { eq } from "drizzle-orm";
+
+export const runtime = "nodejs";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -26,11 +29,8 @@ export async function POST(request: Request, { params }: Params) {
       return NextResponse.json({ error: "You can only check in from the park" }, { status: 400 });
     }
 
-    const formData = await request.formData();
-    const photo = formData.get("photo");
-    const note = (formData.get("note") as string | null)?.trim() || undefined;
-
-    if (!photo || !(photo instanceof Blob)) {
+    const { buffer: photoBuffer, note } = await parseUploadPhoto(request);
+    if (photoBuffer.length === 0) {
       return NextResponse.json({ error: "Photo required" }, { status: 400 });
     }
 
@@ -39,9 +39,10 @@ export async function POST(request: Request, { params }: Params) {
     const timezone = normalizeTimezone(club?.timezone);
     const clubToday = getClubLocalDate(timezone);
 
-    const blob = await put(`clubs/${clubId}/${auth.uid}/${clubToday}.jpg`, photo, {
+    const blob = await put(`clubs/${clubId}/${auth.uid}/${clubToday}.jpg`, photoBuffer, {
       access: "public",
-      contentType: photo.type || "image/jpeg",
+      contentType: "image/jpeg",
+      addRandomSuffix: true,
     });
 
     const postId = await createReadingPost(clubId, auth.uid, blob.url, note);
@@ -50,6 +51,8 @@ export async function POST(request: Request, { params }: Params) {
   } catch (e) {
     if (e instanceof Response) return e;
     console.error("check-in error:", e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    const message = e instanceof Error ? e.message : "Server error";
+    const status = message === "Photo required" ? 400 : 500;
+    return NextResponse.json({ error: status === 400 ? message : "Upload failed. Try again." }, { status });
   }
 }

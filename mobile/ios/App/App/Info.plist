@@ -48,7 +48,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Quest Log uses your camera for daily reading check-in photos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Quest Log lets you pick photos for reading check-ins.</string>
+	<string>Quest Log lets you pick photos for reading check-ins and punishment photos.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Quest Log uses your microphone when recording punishment videos.</string>
 	<key>CFBundleURLTypes</key>
