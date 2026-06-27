@@ -4,7 +4,7 @@
   "private": true,
   "description": "Capacitor shell for Quest Log (iOS + Android)",
   "scripts": {
-    "sync": "cap sync",
+    "sync": "cap sync && node scripts/fix-ios-podfile.mjs && cd ios/App && pod install",
     "ios": "cap open ios",
     "android": "cap open android",
     "copy": "cap copy"

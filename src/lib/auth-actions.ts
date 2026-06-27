@@ -28,7 +28,7 @@ async function signInWithGoogleNative(): Promise<User | null> {
   const idToken = result.credential?.idToken;
   const accessToken = result.credential?.accessToken;
   if (!idToken && !accessToken) {
-    throw new Error("Google sign-in did not return a credential.");
+    throw new Error("Google sign-in was cancelled or did not return a credential.");
   }
   const credential = GoogleAuthProvider.credential(idToken, accessToken);
   const userCred = await signInWithCredential(getFirebaseAuth(), credential);
