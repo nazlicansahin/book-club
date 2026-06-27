@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { AppHeader, BottomNav, HeaderIcons } from "@/components/layout/app-chrome";
+import { AppHeader, BottomNav } from "@/components/layout/app-chrome";
+import { UserMenu } from "@/components/auth/user-menu";
 import { DEMO_CLUBS } from "@/lib/clubs";
 
 const CLUB_ICONS = [
@@ -14,7 +15,7 @@ const PROGRESS = ["75%", "25%", "100%"];
 export default function DashboardPage() {
   return (
     <>
-      <AppHeader right={<HeaderIcons />} />
+      <AppHeader right={<UserMenu />} />
       <main className="pt-24 px-4 max-w-md mx-auto pb-32">
         <div className="mb-8">
           <h1 className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase mb-2">

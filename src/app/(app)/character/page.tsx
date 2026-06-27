@@ -5,16 +5,28 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { AppHeader, BottomNav } from "@/components/layout/app-chrome";
 import { StarField } from "@/components/layout/star-field";
+import { useAuth } from "@/components/auth/auth-provider";
 import { CHARACTERS, type CharacterId } from "@/lib/characters";
 import { setStoredCharacter } from "@/lib/player-store";
+import { saveUserCharacter } from "@/lib/users";
 
 export default function CharacterSelectPage() {
   const router = useRouter();
+  const { user, refreshProfile } = useAuth();
   const [selected, setSelected] = useState<CharacterId>("wizard");
+  const [saving, setSaving] = useState(false);
 
-  function confirm() {
-    setStoredCharacter(selected);
-    router.push("/dashboard");
+  async function confirm() {
+    if (!user) return;
+    setSaving(true);
+    try {
+      setStoredCharacter(selected);
+      await saveUserCharacter(user.uid, selected);
+      await refreshProfile();
+      router.push("/dashboard");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -86,9 +98,10 @@ export default function CharacterSelectPage() {
           <button
             type="button"
             onClick={confirm}
-            className="w-full bg-tertiary text-on-tertiary py-4 px-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all duration-75 uppercase text-lg font-bold font-[family-name:var(--font-space-mono)]"
+            disabled={saving}
+            className="w-full bg-tertiary text-on-tertiary py-4 px-6 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-x-1 active:translate-y-1 active:shadow-none transition-all duration-75 uppercase text-lg font-bold font-[family-name:var(--font-space-mono)] disabled:opacity-60"
           >
-            CONFIRM SELECTION
+            {saving ? "SAVING..." : "CONFIRM SELECTION"}
           </button>
           <div className="mt-4 text-center">
             <span className="text-[10px] font-bold font-[family-name:var(--font-space-mono)] text-outline uppercase tracking-widest flex items-center justify-center gap-2">

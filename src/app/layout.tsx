@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Space_Mono, Courier_Prime } from "next/font/google";
+import { AuthProvider } from "@/components/auth/auth-provider";
 import "./globals.css";
 
 const spaceMono = Space_Mono({
@@ -36,7 +37,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col overflow-x-hidden">
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

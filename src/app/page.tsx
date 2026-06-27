@@ -65,7 +65,7 @@ export default function LandingPage() {
           </div>
 
           <Link
-            href="/character"
+            href="/login"
             className="pixel-border bg-tertiary text-on-tertiary text-xl font-bold font-[family-name:var(--font-space-mono)] uppercase px-12 py-6 pixel-shadow-lg transition-all duration-75 hover:translate-x-0.5 hover:translate-y-0.5 active:translate-x-1 active:translate-y-1 active:shadow-none"
           >
             PRESS START
