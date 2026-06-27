@@ -12,7 +12,7 @@ const config: CapacitorConfig = {
     allowNavigation: [productionUrl, "accounts.google.com", "*.google.com", "*.firebaseapp.com"],
   },
   ios: {
-    contentInset: "automatic",
+    contentInset: "never",
     backgroundColor: "#08122b",
   },
   android: {

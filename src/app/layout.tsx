@@ -34,6 +34,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
   themeColor: "#08122b",
 };
@@ -54,7 +56,7 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-full flex flex-col overflow-x-hidden">
+      <body className="min-h-dvh w-full flex flex-col overflow-x-hidden antialiased">
         <MobileInit />
         <AuthProvider>{children}</AuthProvider>
       </body>

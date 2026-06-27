@@ -147,7 +147,7 @@ export default function ClubMainPage() {
 
   return (
     <>
-      <header className="app-shell-header bg-surface-container border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center w-full px-4 h-16 fixed top-0 z-50">
+      <header className="app-shell-header bg-surface-container border-b-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] flex justify-between items-center w-full max-w-[100vw] h-16 fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center gap-2 min-w-0">
           <Image
             src="/assets/icons/fire-medium.png"
@@ -166,7 +166,7 @@ export default function ClubMainPage() {
         </div>
       </header>
 
-      <main className="app-content-pad-top app-content-pad-bottom flex-grow px-4 flex flex-col gap-6 max-w-md mx-auto w-full">
+      <main className="app-content-pad-top app-content-pad-bottom app-page flex flex-col gap-6 w-full flex-grow">
         <StreakCard streak={club.currentStreak} />
 
         {allInPoolToday && club.currentStreak > 0 && (

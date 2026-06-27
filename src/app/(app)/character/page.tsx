@@ -45,7 +45,7 @@ export default function CharacterSelectPage() {
     <>
       <StarField />
       <AppHeader title="CONFIG" />
-      <main className="flex-grow flex flex-col items-center w-full max-w-md px-4 app-content-pad-top app-content-pad-bottom mx-auto">
+      <main className="flex-grow flex flex-col items-center w-full app-page app-content-pad-top app-content-pad-bottom">
         <div className="text-center mb-6 w-full">
           <h1 className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase mb-1 tracking-wider">
             SETTINGS

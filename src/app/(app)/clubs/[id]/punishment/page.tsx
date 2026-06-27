@@ -38,7 +38,7 @@ export default function PunishmentPage() {
   return (
     <>
       <AppHeader title="PUNISHMENT" />
-      <main className="app-content-pad-top app-content-pad-bottom px-4 max-w-md mx-auto">
+      <main className="app-content-pad-top app-content-pad-bottom app-page w-full">
         <div className="text-center mb-8">
           <span
             className="material-symbols-outlined text-4xl text-error mb-2"

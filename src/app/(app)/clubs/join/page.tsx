@@ -32,7 +32,7 @@ export default function JoinClubPage() {
   return (
     <>
       <AppHeader title="JOIN CLUB" />
-      <main className="app-content-pad-top app-content-pad-bottom px-4 max-w-md mx-auto">
+      <main className="app-content-pad-top app-content-pad-bottom app-page w-full">
         <div className="text-center mb-8">
           <span className="material-symbols-outlined text-4xl text-primary mb-2">key</span>
           <h1 className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase">

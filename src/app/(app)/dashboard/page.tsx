@@ -24,7 +24,7 @@ export default function DashboardPage() {
   return (
     <>
       <AppHeader right={<UserMenu />} />
-      <main className="app-content-pad-top app-content-pad-bottom px-4 max-w-md mx-auto">
+      <main className="app-content-pad-top app-content-pad-bottom app-page w-full">
         <div className="mb-8">
           <h1 className="text-2xl font-bold font-[family-name:var(--font-space-mono)] text-primary uppercase mb-2">
             MY CLUBS
