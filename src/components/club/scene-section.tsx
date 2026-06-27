@@ -22,6 +22,16 @@ function MemberLabel({ name }: { name: string }) {
   );
 }
 
+function PunishmentCard({ text }: { text: string }) {
+  return (
+    <div className="mt-2 w-full max-w-[148px] min-h-[2.5rem] pixel-border bg-error-container text-on-error-container px-2 py-1.5 flex items-center justify-center">
+      <p className="text-[9px] font-bold font-[family-name:var(--font-space-mono)] text-center leading-snug">
+        {text}
+      </p>
+    </div>
+  );
+}
+
 type SceneSectionProps = {
   area: keyof typeof SCENE_IMAGES;
   label: string;
@@ -33,7 +43,7 @@ export function SceneSection({ area, label, members, onMemberTap }: SceneSection
   const tappable = area === "pool" && !!onMemberTap;
 
   return (
-    <section className="pixel-border bg-surface-container-high overflow-hidden pixel-shadow relative h-48 md:h-64">
+    <section className={`pixel-border bg-surface-container-high overflow-hidden pixel-shadow relative ${area === "prison" ? "h-56 md:h-72" : "h-48 md:h-64"}`}>
       <div className="absolute inset-0 z-0">
         <Image
           src={SCENE_IMAGES[area]}
@@ -52,27 +62,23 @@ export function SceneSection({ area, label, members, onMemberTap }: SceneSection
       </div>
 
       {area === "prison" ? (
-        <div className="absolute inset-0 flex items-center justify-center gap-8 z-20 pt-8">
+        <div className="absolute inset-0 flex items-end justify-center gap-4 z-20 px-3 pb-3">
           {members.map((member) => (
-            <div key={member.id} className="relative flex flex-col items-center">
-              {member.punishment && (
-                <div className="character-bubble text-[10px] font-bold font-[family-name:var(--font-space-mono)] mb-2 max-w-[160px] text-center">
-                  {member.punishment}
-                </div>
-              )}
+            <div key={member.id} className="flex flex-col items-center max-w-[148px]">
               <div className="relative">
-                <CharacterSprite characterId={member.characterId} area="prison" size={80} grayscale />
+                <CharacterSprite characterId={member.characterId} area="prison" size={72} grayscale />
                 <div className="absolute inset-0 flex justify-around pointer-events-none">
                   <div className="w-1 bg-black/40 h-full" />
                   <div className="w-1 bg-black/40 h-full" />
                   <div className="w-1 bg-black/40 h-full" />
                 </div>
               </div>
+              <PunishmentCard text={member.punishment ?? "Complete your punishment!"} />
               <MemberLabel name={member.name} />
             </div>
           ))}
           {members.length === 0 && (
-            <p className="text-xs font-[family-name:var(--font-space-mono)] text-on-surface-variant uppercase">
+            <p className="text-xs font-[family-name:var(--font-space-mono)] text-on-surface-variant uppercase pb-4">
               No prisoners
             </p>
           )}
